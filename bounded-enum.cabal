@@ -1,0 +1,33 @@
+cabal-version: 1.12
+
+name:           bounded-enum
+version:        0.1.0.0
+homepage:       https://github.com/jnbooth/bounded-enum#readme
+bug-reports:    https://github.com/jnbooth/bounded-enum/issues
+author:         Joshua Booth <joshua.n.booth@gmail.com>
+maintainer:     Joshua Booth <joshua.n.booth@gmail.com>
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/jnbooth/bounded-enum
+
+library
+  exposed-modules:
+      Data.EnumMemo
+      Data.EnumSet
+  other-modules:
+      Paths_bounded_enum
+  hs-source-dirs:
+      ./
+  default-extensions: NoImplicitPrelude ApplicativeDo BlockArguments DeriveDataTypeable DeriveTraversable GeneralizedNewtypeDeriving ScopedTypeVariables TypeFamilies UnicodeSyntax
+  ghc-options: -Wall -O2 -fwarn-tabs -ferror-spans
+  build-depends:
+      aeson
+    , base
+    , deepseq
+    , mono-traversable
+    , vector
+  default-language: Haskell2010
