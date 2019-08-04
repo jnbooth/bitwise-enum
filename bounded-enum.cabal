@@ -16,8 +16,8 @@ source-repository head
 
 library
   exposed-modules:
-      Data.EnumMemo
-      Data.EnumSet
+      Data.Enum.Memo
+      Data.Enum.Set
   other-modules:
       Paths_bounded_enum
   hs-source-dirs:

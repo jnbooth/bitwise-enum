@@ -13,7 +13,7 @@
 -- The underlying representation is a 'Vector' rather than a search tree.
 -- This provides O(1) lookup but means that the range of keys should not be
 -- very large, as in the case of an @Int@-like type.
-module Data.EnumMemo (memoize) where
+module Data.Enum.Memo (memoize) where
 
 import Prelude hiding (lookup)
 

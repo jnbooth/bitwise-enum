@@ -2,7 +2,7 @@
 Some of the code in this module is modified from the
 [EdisonCore](https://hackage.haskell.org/package/EdisonCore-1.3.2.1) package's
 [Data.Edison.Coll.EnumSet](https://hackage.haskell.org/package/EdisonCore-1.3.2.1/docs/Data-Edison-Coll-EnumSet.html). 
-I'm not sure how that works out, so to be on the safe side, 
+I'm not sure how that works out, so to be on the safe side,
 the entire copyright from that file is reproduced below.
 I will figure this out before publishing it on Hackage (assuming I ever do).
 -}
@@ -40,7 +40,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -}
--- | Efficient sets over enumerations represented by bitwise operations.
+-- | Efficient sets over bounded enumerations, using bitwise operations.
 -- For type @EnumSet W A@, @W@ should be a 'Word'-like type that implements
 -- 'Bits' and 'Num', and @A@ should be a type that implements 'Eq' and 'Enum'
 -- equivalently and is a bijection to 'Int'.
@@ -56,7 +56,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -- is also [Word128](https://hackage.haskell.org/package/wide-word-0.1.0.8/docs/Data-WideWord-Word128.html)
 -- from the [wide-word](https://hackage.haskell.org/package/wide-word-0.1.0.8/)
 -- package.
-module Data.EnumSet
+module Data.Enum.Set
   ( -- * Set type
     EnumSet
 
@@ -112,9 +112,6 @@ module Data.EnumSet
 
   -- * Conversion
   , toList
-
-  -- * Debugging
-  , appropriate
   ) where
 
 import qualified GHC.Exts
@@ -123,12 +120,13 @@ import qualified Data.Foldable as F
 import Prelude hiding (all, any, filter, foldl, foldl1, foldMap, foldr, foldr1, map, maximum, minimum, null, traverse)
 
 import Control.Applicative (liftA2)
+import Control.DeepSeq (NFData)
 import Data.Aeson (ToJSON(..))
 import Data.Bits
 import Data.Data (Data)
 import Data.Monoid (Monoid(..))
 import Foreign.Storable (Storable)
-import GHC.Exts (IsList(Item))
+import GHC.Exts (IsList(Item), build)
 import Text.Read
 
 import qualified Data.Containers
@@ -143,7 +141,7 @@ import           Data.MonoTraversable (Element, GrowingAppend, MonoFoldable, Mon
 
 -- | A set of values @a@ with representation @word@,
 -- implemented as bitwise operations.
-newtype EnumSet word a = EnumSet word deriving (Eq, Ord, Data, Storable)
+newtype EnumSet word a = EnumSet word deriving (Eq, Ord, Data, Storable, NFData)
 
 instance Bits w => Semigroup (EnumSet w a) where
     (<>) = union
@@ -467,14 +465,6 @@ foldMap :: ∀ m w a. (Monoid m, Bits w, Num w, Enum a)
 foldMap f (EnumSet w) = foldrBits (mappend . f . toEnum) mempty w
 {-# INLINE foldMap #-}
 
-{-}
-test :: ∀ f a. Applicative f => (a -> f a) -> [a] -> f [a]
-test f = F.foldr cons_f (pure [])
-  where
-    cons_f :: a -> f [a] -> f [a]
-    cons_f x ys = liftA2 (:) (f x) ys
--}
-
 traverse :: ∀ f w a. (Applicative f, Bits w, Num w, Enum a)
          => (a -> f a) -> EnumSet w a -> f (EnumSet w a)
 traverse f (EnumSet w) = EnumSet <$> 
@@ -559,22 +549,8 @@ maxView (EnumSet w) = let i = msb w in Just (toEnum i, EnumSet $ clearBit w i)
 -- | /O(n)/. Convert the set to a list of values.
 toList :: ∀ w a. (Bits w, Num w, Enum a)
        => EnumSet w a -> [a]
-toList (EnumSet w) = foldrBits ((:) . toEnum) [] w
+toList (EnumSet w) = build \c n -> foldrBits (c . toEnum) n w
 {-# INLINE toList #-}
-
-{--------------------------------------------------------------------
-  Debugging
---------------------------------------------------------------------}
-
--- | Verify that for some representation @EnumSet w a@, @w@ has sufficient
--- bits to store @maxBound :: a@. The actual value of the argument is ignored.
---
--- This function does not verify that @minBound :: a >= 0@, nor that
---
--- > fromEnum x == fromEnum y <==> x == y
--- > toEnum x == toEnum y <==> x == y
-appropriate :: ∀ w a. (FiniteBits w, Enum a, Bounded a) => EnumSet w a -> Bool
-appropriate = const $ fromEnum (maxBound :: a) <= finiteBitSize (zeroBits :: w)
 
 {--------------------------------------------------------------------
   Utility functions
