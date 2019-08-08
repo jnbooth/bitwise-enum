@@ -411,14 +411,14 @@ map f0 (EnumSet w) = EnumSet $ foldlBits' f 0 w
 --------------------------------------------------------------------}
 
 -- | /O(n)/. Left fold.
-foldl :: ∀ w a c. (Bits w, Num w, Enum a)
-      => (c -> a -> c) -> c -> EnumSet w a -> c
+foldl :: ∀ w a b. (Bits w, Num w, Enum a)
+      => (b -> a -> b) -> b -> EnumSet w a -> b
 foldl f z (EnumSet w) = foldlBits ((. toEnum) . f) z w
 {-# INLINE foldl #-}
 
 -- | /O(n)/. Left fold with strict accumulator.
-foldl' :: ∀ w a c. (Bits w, Num w, Enum a)
-       => (c -> a -> c) -> c -> EnumSet w a -> c
+foldl' :: ∀ w a b. (Bits w, Num w, Enum a)
+       => (b -> a -> b) -> b -> EnumSet w a -> b
 foldl' f z (EnumSet w) = foldlBits' ((. toEnum) . f) z w
 {-# INLINE foldl' #-}
 
@@ -702,7 +702,7 @@ foldlBitsAux' f z i w = case (i `seq` w) .&. 0x0F of
     a b = foldlBitsAux' f b (i + 4) (shiftR w 4)
     {-# INLINE a #-}
 
-fold1Aux :: (Bits w, Enum a)
+fold1Aux :: ∀ w a. (Bits w, Enum a)
          => (w -> Int) -> (a -> w -> a) -> EnumSet w a -> a
 fold1Aux getBit f (EnumSet w) = f (toEnum gotBit) (clearBit w gotBit)
   where
