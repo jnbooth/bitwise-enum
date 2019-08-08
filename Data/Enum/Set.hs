@@ -1,7 +1,7 @@
 {-
 Some of the code in this module is modified from the
 [EdisonCore](https://hackage.haskell.org/package/EdisonCore-1.3.2.1) package's
-[Data.Edison.Coll.EnumSet](https://hackage.haskell.org/package/EdisonCore-1.3.2.1/docs/Data-Edison-Coll-EnumSet.html). 
+[Data.Edison.Coll.EnumSet](https://hackage.haskell.org/package/EdisonCore-1.3.2.1/docs/Data-Edison-Coll-EnumSet.html).
 I'm not sure how that works out, so to be on the safe side,
 the entire copyright from that file is reproduced below.
 I will figure this out before publishing it on Hackage (assuming I ever do).
@@ -467,10 +467,10 @@ foldMap f (EnumSet w) = foldrBits (mappend . f . toEnum) mempty w
 
 traverse :: ∀ f w a. (Applicative f, Bits w, Num w, Enum a)
          => (a -> f a) -> EnumSet w a -> f (EnumSet w a)
-traverse f (EnumSet w) = EnumSet <$> 
-                         foldrBits 
+traverse f (EnumSet w) = EnumSet <$>
+                         foldrBits
                          -- :: Int -> f w -> f w
-                         (liftA2 (flip setBit) . fmap fromEnum . f . toEnum) 
+                         (liftA2 (flip setBit) . fmap fromEnum . f . toEnum)
                          (pure zeroBits)
                          w
 {-# INLINE traverse #-}
