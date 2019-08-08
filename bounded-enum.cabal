@@ -18,11 +18,12 @@ library
   exposed-modules:
       Data.Enum.Memo
       Data.Enum.Set
+      Data.Enum.Set.Class
   other-modules:
       Paths_bounded_enum
   hs-source-dirs:
       ./
-  default-extensions: NoImplicitPrelude ApplicativeDo BlockArguments DeriveDataTypeable DeriveTraversable GeneralizedNewtypeDeriving ScopedTypeVariables TypeFamilies UnicodeSyntax
+  default-extensions: NoImplicitPrelude ApplicativeDo BlockArguments DeriveDataTypeable DeriveTraversable FlexibleContexts GeneralizedNewtypeDeriving ScopedTypeVariables TypeFamilies UnicodeSyntax
   ghc-options: -Wall -O2 -fwarn-tabs -ferror-spans
   build-depends:
       aeson
