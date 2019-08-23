@@ -6,8 +6,7 @@
 --
 -- > [0 .. fromEnum maxBound] == map fromEnum [minBound .. maxBound]
 --
--- __This property is not automatically checked.__ The 'appropriate' function
--- does so as a debugging tool, but elsewhere it is assumed to be true.
+-- __This property is not automatically checked.__
 -- Derived instances of @Bounded@ and @Enum@ always obey this condition.
 --
 -- The underlying representation is a 'Vector' rather than a search tree.

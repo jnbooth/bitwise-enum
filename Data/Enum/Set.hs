@@ -56,6 +56,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -- is also [Word128](https://hackage.haskell.org/package/wide-word-0.1.0.8/docs/Data-WideWord-Word128.html)
 -- from the [wide-word](https://hackage.haskell.org/package/wide-word-0.1.0.8/)
 -- package.
+--
+-- "Data.Enum.Set.Class" provides an alternate type alias that moves the
+-- underlying representation to an associated type token,
+-- so that e.g. @EnumSet Word16 MyEnum@ may be replaced with @EnumSet MyEnum@, 
+-- and reexports this module with adjusted type signatures.
 module Data.Enum.Set
   ( -- * Set type
     EnumSet
@@ -134,7 +139,6 @@ import           Data.Containers (SetContainer, IsSet)
 import qualified Data.MonoTraversable
 import           Data.MonoTraversable (Element, GrowingAppend, MonoFoldable, MonoFunctor, MonoPointed, MonoTraversable)
 
-
 {--------------------------------------------------------------------
   Set type
 --------------------------------------------------------------------}
@@ -165,6 +169,8 @@ instance (Bits w, Num w, Enum a) => IsList (EnumSet w a) where
 instance (Bits w, Num w, Enum a, ToJSON a) => ToJSON (EnumSet w a) where
     toJSON = toJSON . toList
     {-# INLINE toJSON #-}
+    toEncoding = toEncoding . toList
+    {-# INLINE toEncoding #-}
 
 type instance Element (EnumSet w a) = a
 
