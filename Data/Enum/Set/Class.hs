@@ -82,7 +82,7 @@ singleton :: ∀ a. AsEnumSet a => a -> EnumSet a
 singleton = E.singleton
 {-# INLINE singleton #-}
 
--- | /O(n)/. Create a set from a foldable data structure.
+-- | /O(n)/. Create a set from a finite foldable data structure.
 fromFoldable :: ∀ f a. (Foldable f, AsEnumSet a) => f a -> EnumSet a
 fromFoldable = E.fromFoldable
 {-# INLINE fromFoldable #-}

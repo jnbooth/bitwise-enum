@@ -1,3 +1,4 @@
+{-# LANGUAGE MagicHash, UnboxedTuples #-}
 {-
 Some of the code in this module is modified from the
 [EdisonCore](https://hackage.haskell.org/package/EdisonCore-1.3.2.1) package's
@@ -273,7 +274,7 @@ singleton :: ∀ w a. (Bits w, Enum a)
 singleton = EnumSet . setBit zeroBits . fromEnum
 {-# INLINE singleton #-}
 
--- | /O(n)/. Create a set from a foldable data structure.
+-- | /O(n)/. Create a set from a finite foldable data structure.
 fromFoldable :: ∀ f w a. (Foldable f, Bits w, Enum a)
              => f a -> EnumSet w a
 fromFoldable = EnumSet . F.foldl' (flip $ (.|.) . bit . fromEnum) zeroBits
@@ -376,9 +377,9 @@ intersection (EnumSet x) (EnumSet y) = EnumSet $ x .&. y
 -- | /O(n)/. Filter all elements that satisfy some predicate.
 filter :: ∀ w a. (Bits w, Num w, Enum a)
        => (a -> Bool) -> EnumSet w a -> EnumSet w a
-filter p (EnumSet w) = EnumSet $ foldlBits' f 0 w
+filter p (EnumSet w) = EnumSet $ foldrBits f 0 w
     where
-      f z i
+      f i z
         | p $ toEnum i = setBit z i
         | otherwise    = z
       {-# INLINE f #-}
@@ -390,8 +391,8 @@ partition :: ∀ w a. (Bits w, Num w, Enum a)
           => (a -> Bool) -> EnumSet w a -> (EnumSet w a, EnumSet w a)
 partition p (EnumSet w) = (EnumSet yay, EnumSet nay)
     where
-      (yay,nay) = foldlBits' f (0, 0) w
-      f (x, y) i
+      (yay, nay) = foldrBits f (0, 0) w
+      f i (x, y)
           | p $ toEnum i = (setBit x i, y)
           | otherwise    = (x, setBit y i)
       {-# INLINE f #-}
@@ -407,9 +408,9 @@ partition p (EnumSet w) = (EnumSet yay, EnumSet nay)
 -- for some @(x,y)@, @x \/= y && f x == f y@
 map :: ∀ w a b. (Bits w, Num w, Enum a, Enum b)
     => (a -> b) -> EnumSet w a -> EnumSet w b
-map f0 (EnumSet w) = EnumSet $ foldlBits' f 0 w
+map f0 (EnumSet w) = EnumSet $ foldrBits f 0 w
     where
-      f z i = setBit z $ fromEnum $ f0 (toEnum i)
+      f i z = setBit z $ fromEnum $ f0 (toEnum i)
       {-# INLINE f #-}
 
 {--------------------------------------------------------------------
@@ -613,7 +614,7 @@ foldrBitsAux f z i w = case (i `seq` w) .&. 0x0F of
      0x0D -> f i $ f (i+2) $ f (i+3) a
      0x0E -> f (i+1) $ f (i+2) $ f (i+3) a
      0x0F -> f i $ f (i+1) $ f (i+2) $ f (i+3) a
-     _ -> error "bug in foldrBitsAux"
+     _    -> error "bug in foldrBitsAux"
   where
     a = foldrBitsAux f z (i+4) (shiftR w 4)
     {-# INLINE a #-}
