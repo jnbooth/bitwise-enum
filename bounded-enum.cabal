@@ -1,5 +1,11 @@
 cabal-version: 1.12
 
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 86eadc1a788caf652e970ad8a1d412c23fd42f02bda01c79efe82b4532a081f1
+
 name:           bounded-enum
 version:        0.1.0.0
 homepage:       https://github.com/jnbooth/bounded-enum#readme
@@ -23,12 +29,55 @@ library
       Paths_bounded_enum
   hs-source-dirs:
       ./
-  default-extensions: NoImplicitPrelude ApplicativeDo BlockArguments DeriveDataTypeable DeriveTraversable FlexibleContexts GeneralizedNewtypeDeriving ScopedTypeVariables TypeFamilies UnicodeSyntax
+  default-extensions: NoImplicitPrelude ApplicativeDo BangPatterns BlockArguments DeriveDataTypeable DeriveTraversable FlexibleContexts GeneralizedNewtypeDeriving ScopedTypeVariables TypeFamilies UnicodeSyntax
   ghc-options: -Wall -O2 -fwarn-tabs -ferror-spans
   build-depends:
       aeson
     , base
+    , containers
     , deepseq
     , mono-traversable
     , vector
+  default-language: Haskell2010
+
+test-suite enumset-test-suite
+  type: exitcode-stdio-1.0
+  main-is: set-properties.hs
+  other-modules:
+      Paths_bounded_enum
+  hs-source-dirs:
+      tests
+  default-extensions: NoImplicitPrelude ApplicativeDo BangPatterns BlockArguments DeriveDataTypeable DeriveTraversable FlexibleContexts GeneralizedNewtypeDeriving ScopedTypeVariables TypeFamilies UnicodeSyntax
+  build-depends:
+      QuickCheck
+    , aeson
+    , base
+    , bounded-enum
+    , containers
+    , deepseq
+    , mono-traversable
+    , test-framework
+    , test-framework-quickcheck2
+    , vector
+  default-language: Haskell2010
+
+benchmark enumset-benchmarks
+  type: exitcode-stdio-1.0
+  main-is: EnumSet.hs
+  other-modules:
+      Paths_bounded_enum
+  hs-source-dirs:
+      benchmarks
+  default-extensions: NoImplicitPrelude ApplicativeDo BangPatterns BlockArguments DeriveDataTypeable DeriveTraversable FlexibleContexts GeneralizedNewtypeDeriving ScopedTypeVariables TypeFamilies UnicodeSyntax
+  ghc-options: -rtsopts -threaded -with-rtsopts=-N -Wall -O2 -fwarn-tabs -ferror-spans
+  build-depends:
+      aeson
+    , base
+    , bounded-enum
+    , containers
+    , deepseq
+    , gauge
+    , mono-traversable
+    , vector
+    , wide-word
   default-language: Haskell2010

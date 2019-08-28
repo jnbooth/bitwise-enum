@@ -63,7 +63,7 @@ import Data.Monoid (Monoid(..))
 
 import qualified Data.Enum.Set as E
 
-class (Enum a, Bits (EnumSetRep a), Num (EnumSetRep a)) => AsEnumSet a where
+class (Enum a, FiniteBits (EnumSetRep a), Num (EnumSetRep a)) => AsEnumSet a where
     type EnumSetRep a
 
 type EnumSet a = E.EnumSet (EnumSetRep a) a
