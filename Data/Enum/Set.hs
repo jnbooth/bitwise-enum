@@ -377,7 +377,7 @@ foldl' f z (EnumSet w) = foldlBits' ((. toEnum) . f) z w
 {-# INLINE foldl' #-}
 
 -- | /O(n)/. Right fold.
-foldr :: (FiniteBits w, Num w, Enum a)
+foldr :: ∀ w a b. (FiniteBits w, Num w, Enum a)
       => (a -> b -> b) -> b -> EnumSet w a -> b
 foldr f z (EnumSet w) = foldrBits (f . toEnum) z w
 {-# INLINE foldr #-}
@@ -506,7 +506,7 @@ toList (EnumSet w) = build \c n -> foldrBits (c . toEnum) n w
   Utility functions
 --------------------------------------------------------------------}
 
-bitcount :: ∀ w i. (Bits w, Num w, Num i) => i -> w -> i
+bitcount :: ∀ i w. (Bits w, Num w, Num i) => i -> w -> i
 bitcount a 0 = a
 bitcount !a x = bitcount (a+1) (x .&. (x - 1))
 
