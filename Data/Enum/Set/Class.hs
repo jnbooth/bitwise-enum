@@ -1,3 +1,8 @@
+{-# LANGUAGE ExplicitForAll   #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE UnicodeSyntax    #-}
+
 module Data.Enum.Set.Class
   ( AsEnumSet(..)
   -- * Set type

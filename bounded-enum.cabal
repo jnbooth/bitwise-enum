@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 86eadc1a788caf652e970ad8a1d412c23fd42f02bda01c79efe82b4532a081f1
+-- hash: 0ff3d137175cfef8fa6c8d5f47ba4696e0e2ba50c01c0b280c08060a805e8c7b
 
 name:           bounded-enum
-version:        0.1.0.0
+version:        0.1.1.0
 homepage:       https://github.com/jnbooth/bounded-enum#readme
 bug-reports:    https://github.com/jnbooth/bounded-enum/issues
 author:         Joshua Booth <joshua.n.booth@gmail.com>
@@ -29,7 +29,6 @@ library
       Paths_bounded_enum
   hs-source-dirs:
       ./
-  default-extensions: NoImplicitPrelude ApplicativeDo BangPatterns BlockArguments DeriveDataTypeable DeriveTraversable FlexibleContexts GeneralizedNewtypeDeriving ScopedTypeVariables TypeFamilies UnicodeSyntax
   ghc-options: -Wall -O2 -fwarn-tabs -ferror-spans
   build-depends:
       aeson
@@ -47,7 +46,6 @@ test-suite enumset-test-suite
       Paths_bounded_enum
   hs-source-dirs:
       tests
-  default-extensions: NoImplicitPrelude ApplicativeDo BangPatterns BlockArguments DeriveDataTypeable DeriveTraversable FlexibleContexts GeneralizedNewtypeDeriving ScopedTypeVariables TypeFamilies UnicodeSyntax
   build-depends:
       QuickCheck
     , aeson
@@ -68,7 +66,6 @@ benchmark enumset-benchmarks
       Paths_bounded_enum
   hs-source-dirs:
       benchmarks
-  default-extensions: NoImplicitPrelude ApplicativeDo BangPatterns BlockArguments DeriveDataTypeable DeriveTraversable FlexibleContexts GeneralizedNewtypeDeriving ScopedTypeVariables TypeFamilies UnicodeSyntax
   ghc-options: -rtsopts -threaded -with-rtsopts=-N -Wall -O2 -fwarn-tabs -ferror-spans
   build-depends:
       aeson

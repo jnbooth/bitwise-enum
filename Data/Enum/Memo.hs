@@ -1,3 +1,8 @@
+{-# LANGUAGE ExplicitForAll      #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE UnicodeSyntax       #-}
+
 -- | Immutable lazy tables of functions over bounded enumerations.
 -- Function calls are stored as thunks and not evaluated until accessed.
 --
@@ -19,6 +24,6 @@ import Prelude hiding (lookup)
 import qualified Data.Vector as Vector
 
 memoize :: ∀ k v. (Bounded k, Enum k) => (k -> v) -> k -> v
-memoize f = Vector.unsafeIndex memo . fromEnum
-  where
-    memo = Vector.generate (1 + fromEnum (maxBound :: k)) $ f . toEnum
+memoize f =
+    case Vector.generate (1 + fromEnum @k maxBound) $ f . toEnum of
+        memo -> Vector.unsafeIndex memo . fromEnum

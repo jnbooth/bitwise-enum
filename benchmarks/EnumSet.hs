@@ -1,3 +1,9 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ExplicitForAll      #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE UnicodeSyntax       #-}
+
 module Main where
 
 import Prelude
@@ -8,7 +14,6 @@ import Data.Bits
 import Data.List (foldl', transpose)
 import Data.WideWord (Word128)
 import Data.Word (Word8, Word16, Word32, Word64)
-import Data.Proxy (Proxy(..))
 import qualified Gauge as G
 import Gauge (Benchmark)
 
@@ -16,15 +21,15 @@ import qualified Data.Enum.Set as E
 
 main :: IO ()
 main = G.defaultMain . concat . transpose =<< sequence
-    [ benchWord (Proxy :: Proxy Word8)
-    , benchWord (Proxy :: Proxy Word16)
-    , benchWord (Proxy :: Proxy Word32)
-    , benchWord (Proxy :: Proxy Word64)
-    , benchWord (Proxy :: Proxy Word128)
+    [ benchWord @Word8
+    , benchWord @Word16
+    , benchWord @Word32
+    , benchWord @Word64
+    , benchWord @Word128
     ]
 
-benchWord :: ∀ w. (FiniteBits w, NFData w, Num w) => Proxy w -> IO [Benchmark]
-benchWord _ = do
+benchWord :: ∀ w. (FiniteBits w, NFData w, Num w) => IO [Benchmark]
+benchWord = do
     let s = E.fromFoldable elems :: E.EnumSet w Int
         s_even = E.fromFoldable elems_even :: E.EnumSet w Int
         s_odd = E.fromFoldable elems_odd :: E.EnumSet w Int

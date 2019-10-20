@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 import Prelude
 
 import Data.List ((\\), foldl', nub, sort)
