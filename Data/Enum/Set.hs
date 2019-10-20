@@ -1,3 +1,17 @@
+{-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE BlockArguments             #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE ExplicitForAll             #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UnboxedTuples              #-}
+{-# LANGUAGE UnicodeSyntax              #-}
+
 -- | Efficient sets over bounded enumerations, using bitwise operations
 -- based on [EdisonCore](https://hackage.haskell.org/package/EdisonCore-1.3.2.1/docs/src/Data-Edison-Coll-EnumSet.html) and [containers](https://hackage.haskell.org/package/containers-0.6.0.1/docs/src/Data.IntSet.Internal.html).
 -- For type @EnumSet W A@, @W@ should be a 'Word'-like type that implements
@@ -85,13 +99,19 @@ import Prelude hiding (all, any, filter, foldl, foldl1, foldMap, foldr, foldr1, 
 
 import Control.Applicative (liftA2)
 import Control.DeepSeq (NFData)
+import Control.Monad
 import Data.Aeson (ToJSON(..))
 import Data.Bits
 import Data.Data (Data)
 import Data.Monoid (Monoid(..))
+import Data.Vector.Unboxed (Vector, MVector, Unbox)
 import Foreign.Storable (Storable)
 import GHC.Exts (IsList(Item), build)
 import Text.Read
+
+import qualified Data.Vector.Generic.Base as G
+import qualified Data.Vector.Generic.Mutable.Base as M
+import qualified Data.Vector.Primitive as P
 
 import qualified Data.Containers
 import           Data.Containers (SetContainer, IsSet)
@@ -104,7 +124,56 @@ import           Data.MonoTraversable (Element, GrowingAppend, MonoFoldable, Mon
 
 -- | A set of values @a@ with representation @word@,
 -- implemented as bitwise operations.
-newtype EnumSet word a = EnumSet word deriving (Eq, Ord, Data, Storable, NFData)
+newtype EnumSet word a = EnumSet word
+    deriving (Eq, Ord, Data, Storable, NFData, P.Prim, Unbox)
+
+newtype instance MVector s (EnumSet word a) = MV_EnumSet (P.MVector s (EnumSet word a))
+newtype instance Vector    (EnumSet word a) = V_EnumSet (P.Vector (EnumSet word a))
+
+instance P.Prim word => M.MVector MVector (EnumSet word a) where
+    basicLength (MV_EnumSet v)  = M.basicLength v
+    {-# INLINE basicLength #-}
+    basicUnsafeSlice i n (MV_EnumSet v) = MV_EnumSet $ M.basicUnsafeSlice i n v
+    {-# INLINE basicUnsafeSlice #-}
+    basicOverlaps (MV_EnumSet v1) (MV_EnumSet v2) = M.basicOverlaps v1 v2
+    {-# INLINE basicOverlaps #-}
+    basicUnsafeNew n = MV_EnumSet `liftM` M.basicUnsafeNew n
+    {-# INLINE basicUnsafeNew #-}
+    basicInitialize (MV_EnumSet v) = M.basicInitialize v
+    {-# INLINE basicInitialize #-}
+    basicUnsafeReplicate n x = MV_EnumSet `liftM` M.basicUnsafeReplicate n x
+    {-# INLINE basicUnsafeReplicate #-}
+    basicUnsafeRead (MV_EnumSet v) i = M.basicUnsafeRead v i
+    {-# INLINE basicUnsafeRead #-}
+    basicUnsafeWrite (MV_EnumSet v) i x = M.basicUnsafeWrite v i x
+    {-# INLINE basicUnsafeWrite #-}
+    basicClear (MV_EnumSet v) = M.basicClear v
+    {-# INLINE basicClear #-}
+    basicSet (MV_EnumSet v) x = M.basicSet v x
+    {-# INLINE basicSet #-}
+    basicUnsafeCopy (MV_EnumSet v1) (MV_EnumSet v2) = M.basicUnsafeCopy v1 v2
+    {-# INLINE basicUnsafeCopy #-}
+    basicUnsafeMove (MV_EnumSet v1) (MV_EnumSet v2) = M.basicUnsafeMove v1 v2
+    {-# INLINE basicUnsafeMove #-}
+    basicUnsafeGrow (MV_EnumSet v) n = MV_EnumSet `liftM` M.basicUnsafeGrow v n
+    {-# INLINE basicUnsafeGrow #-}
+
+
+instance P.Prim word => G.Vector Vector (EnumSet word a) where
+    basicUnsafeFreeze (MV_EnumSet v) = V_EnumSet `liftM` G.basicUnsafeFreeze v
+    {-# INLINE basicUnsafeFreeze #-}
+    basicUnsafeThaw (V_EnumSet v) = MV_EnumSet `liftM` G.basicUnsafeThaw v
+    {-# INLINE basicUnsafeThaw #-}
+    basicLength (V_EnumSet v) = G.basicLength v
+    {-# INLINE basicLength #-}
+    basicUnsafeSlice i n (V_EnumSet v) = V_EnumSet $ G.basicUnsafeSlice i n v
+    {-# INLINE basicUnsafeSlice #-}
+    basicUnsafeIndexM (V_EnumSet v) i = G.basicUnsafeIndexM v i
+    {-# INLINE basicUnsafeIndexM #-}
+    basicUnsafeCopy (MV_EnumSet mv) (V_EnumSet v) = G.basicUnsafeCopy mv v
+    {-# INLINE basicUnsafeCopy #-}
+    elemseq _ = seq
+    {-# INLINE elemseq #-}
 
 instance Bits w => Semigroup (EnumSet w a) where
     (<>) = union
@@ -203,13 +272,15 @@ instance (FiniteBits w, Num w, Eq a, Enum a) => IsSet (EnumSet w a) where
 instance (FiniteBits w, Num w, Enum x, Show x) => Show (EnumSet w x) where
     showsPrec p xs = showParen (p > 10) $
         showString "fromList " . shows (toList xs)
+    {-# INLINABLE showsPrec #-}
 
 instance (Bits w, Num w, Enum x, Read x) => Read (EnumSet w x) where
     readPrec = parens $ prec 10 do
         Ident "fromList" <- lexP
-        xs :: [x] <- readPrec
-        return $ fromFoldable xs
+        fromFoldable @[] <$> readPrec
+    {-# INLINABLE readPrec #-}
     readListPrec = readListPrecDefault
+    {-# INLINABLE readListPrec #-}
 
 {--------------------------------------------------------------------
   Construction
