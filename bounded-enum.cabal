@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0ff3d137175cfef8fa6c8d5f47ba4696e0e2ba50c01c0b280c08060a805e8c7b
+-- hash: 9a3f45d20e9d2f9daeae50201dcf4f4f088aa8c14a09ebc57c1d34eacf4ff331
 
 name:           bounded-enum
-version:        0.1.1.0
+version:        0.1.0.0
 homepage:       https://github.com/jnbooth/bounded-enum#readme
 bug-reports:    https://github.com/jnbooth/bounded-enum/issues
 author:         Joshua Booth <joshua.n.booth@gmail.com>
@@ -24,7 +24,7 @@ library
   exposed-modules:
       Data.Enum.Memo
       Data.Enum.Set
-      Data.Enum.Set.Class
+      Data.Enum.Set.Base
   other-modules:
       Paths_bounded_enum
   hs-source-dirs:

@@ -1,43 +1,36 @@
-{-# LANGUAGE BangPatterns               #-}
-{-# LANGUAGE BlockArguments             #-}
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE DeriveDataTypeable         #-}
-{-# LANGUAGE ExplicitForAll             #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE PolyKinds                  #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE TypeApplications           #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE UnboxedTuples              #-}
-{-# LANGUAGE UnicodeSyntax              #-}
+{-# LANGUAGE ExplicitForAll   #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE UnicodeSyntax    #-}
 
 -- | Efficient sets over bounded enumerations, using bitwise operations
--- based on [EdisonCore](https://hackage.haskell.org/package/EdisonCore-1.3.2.1/docs/src/Data-Edison-Coll-EnumSet.html) and [containers](https://hackage.haskell.org/package/containers-0.6.0.1/docs/src/Data.IntSet.Internal.html).
--- For type @EnumSet W A@, @W@ should be a 'Word'-like type that implements
--- 'Bits' and 'Num', and @A@ should be a type that implements 'Eq' and 'Enum'
+-- based on [containers](https://hackage.haskell.org/package/containers-0.6.0.1/docs/src/Data.IntSet.Internal.html)
+-- and [EdisonCore](https://hackage.haskell.org/package/EdisonCore-1.3.2.1/docs/src/Data-Edison-Coll-EnumSet.html).
+--
+-- For @E@, @EnumSetRep E@ should be a 'Word'-like type that implements
+-- 'Bits' and 'Num', and @E@ should be a type that implements 'Eq' and 'Enum'
 -- equivalently and is a bijection to 'Int'.
 --
--- @EnumSet W A@ will not store any @A@ with a 'fromEnum' less than 0 or greater
--- than the number of bits in @W@, so it is best for @A@ to be a type that
--- derives 'Eq' and 'Enum' and for @W@ to have at least as many bits as the
--- number of constructors of @A@.
+-- @EnumSet E@ can only store @E@s with 'fromEnum' greater than 0 and less
+-- than the number of bits in @EnumSetRep@, so it is best for @E@ to be a type
+-- that derives 'Eq' and 'Enum' and for @EnumSetRep E@ to have more bits than
+-- the number of constructors of @E@.
 --
--- Depending on the number of constructors, one of 'Data.Word.Word8',
--- 'Data.Word.Word16', 'Data.Word.Word32', or 'Data.Word.Word64' is a good
--- default representation type. For enumerations with many constructors, there
--- is also [Word128](https://hackage.haskell.org/package/wide-word-0.1.0.8/docs/Data-WideWord-Word128.html)
--- from the [wide-word](https://hackage.haskell.org/package/wide-word-0.1.0.8/)
--- package.
+-- If the highest @fronEnum@ value of @E@ is 29, @EnumSetRep E@ should be
+-- 'Data.Word.Word', because it always has at least 30 bits. This is the
+-- default implementation.
+-- Otherwise, options include 'Data.Word.Word32', 'Data.Word.Word64', and the
+-- [wide-word](https://hackage.haskell.org/package/wide-word-0.1.0.8/) package's
+-- [Data.WideWord.Word128](https://hackage.haskell.org/package/wide-word-0.1.0.8/docs/Data-WideWord-Word128.html).
 --
--- "Data.Enum.Set.Class" provides an alternate type alias that moves the
--- underlying representation to an associated type token,
--- so that e.g. @EnumSet Word16 MyEnum@ may be replaced with @EnumSet MyEnum@,
--- and reexports this module with adjusted type signatures.
+-- "Data.Enum.Set.Base" provides the underlying data type, in which the word
+-- type used as the representation is a parameter of the @EnumSet@ itself, e.g.
+-- @EnumSet Word64 MyEnum@. This module reexports its functions with adjusted
+-- type signatures.
 module Data.Enum.Set
-  ( -- * Set type
-    EnumSet
-
+  ( AsEnumSet(..)
+  -- * Set type
+  , EnumSet
     -- * Construction
   , empty
   , singleton
@@ -92,265 +85,84 @@ module Data.Enum.Set
   , toList
   ) where
 
-import qualified GHC.Exts
-import qualified Data.Foldable as F
-
 import Prelude hiding (all, any, filter, foldl, foldl1, foldMap, foldr, foldr1, map, maximum, minimum, null, traverse)
 
-import Control.Applicative (liftA2)
-import Control.DeepSeq (NFData)
-import Control.Monad
-import Data.Aeson (ToJSON(..))
 import Data.Bits
-import Data.Data (Data)
 import Data.Monoid (Monoid(..))
-import Data.Vector.Unboxed (Vector, MVector, Unbox)
-import Foreign.Storable (Storable)
-import GHC.Exts (IsList(Item), build)
-import Text.Read
 
-import qualified Data.Vector.Generic.Base as G
-import qualified Data.Vector.Generic.Mutable.Base as M
-import qualified Data.Vector.Primitive as P
+import qualified Data.Enum.Set.Base as E
 
-import qualified Data.Containers
-import           Data.Containers (SetContainer, IsSet)
-import qualified Data.MonoTraversable
-import           Data.MonoTraversable (Element, GrowingAppend, MonoFoldable, MonoFunctor, MonoPointed, MonoTraversable)
+class (Enum a, FiniteBits (EnumSetRep a), Num (EnumSetRep a)) => AsEnumSet a where
+    type EnumSetRep a
+    type EnumSetRep a = Word
 
-{--------------------------------------------------------------------
-  Set type
---------------------------------------------------------------------}
-
--- | A set of values @a@ with representation @word@,
--- implemented as bitwise operations.
-newtype EnumSet word a = EnumSet word
-    deriving (Eq, Ord, Data, Storable, NFData, P.Prim, Unbox)
-
-newtype instance MVector s (EnumSet word a) = MV_EnumSet (P.MVector s (EnumSet word a))
-newtype instance Vector    (EnumSet word a) = V_EnumSet (P.Vector (EnumSet word a))
-
-instance P.Prim word => M.MVector MVector (EnumSet word a) where
-    basicLength (MV_EnumSet v)  = M.basicLength v
-    {-# INLINE basicLength #-}
-    basicUnsafeSlice i n (MV_EnumSet v) = MV_EnumSet $ M.basicUnsafeSlice i n v
-    {-# INLINE basicUnsafeSlice #-}
-    basicOverlaps (MV_EnumSet v1) (MV_EnumSet v2) = M.basicOverlaps v1 v2
-    {-# INLINE basicOverlaps #-}
-    basicUnsafeNew n = MV_EnumSet `liftM` M.basicUnsafeNew n
-    {-# INLINE basicUnsafeNew #-}
-    basicInitialize (MV_EnumSet v) = M.basicInitialize v
-    {-# INLINE basicInitialize #-}
-    basicUnsafeReplicate n x = MV_EnumSet `liftM` M.basicUnsafeReplicate n x
-    {-# INLINE basicUnsafeReplicate #-}
-    basicUnsafeRead (MV_EnumSet v) i = M.basicUnsafeRead v i
-    {-# INLINE basicUnsafeRead #-}
-    basicUnsafeWrite (MV_EnumSet v) i x = M.basicUnsafeWrite v i x
-    {-# INLINE basicUnsafeWrite #-}
-    basicClear (MV_EnumSet v) = M.basicClear v
-    {-# INLINE basicClear #-}
-    basicSet (MV_EnumSet v) x = M.basicSet v x
-    {-# INLINE basicSet #-}
-    basicUnsafeCopy (MV_EnumSet v1) (MV_EnumSet v2) = M.basicUnsafeCopy v1 v2
-    {-# INLINE basicUnsafeCopy #-}
-    basicUnsafeMove (MV_EnumSet v1) (MV_EnumSet v2) = M.basicUnsafeMove v1 v2
-    {-# INLINE basicUnsafeMove #-}
-    basicUnsafeGrow (MV_EnumSet v) n = MV_EnumSet `liftM` M.basicUnsafeGrow v n
-    {-# INLINE basicUnsafeGrow #-}
-
-
-instance P.Prim word => G.Vector Vector (EnumSet word a) where
-    basicUnsafeFreeze (MV_EnumSet v) = V_EnumSet `liftM` G.basicUnsafeFreeze v
-    {-# INLINE basicUnsafeFreeze #-}
-    basicUnsafeThaw (V_EnumSet v) = MV_EnumSet `liftM` G.basicUnsafeThaw v
-    {-# INLINE basicUnsafeThaw #-}
-    basicLength (V_EnumSet v) = G.basicLength v
-    {-# INLINE basicLength #-}
-    basicUnsafeSlice i n (V_EnumSet v) = V_EnumSet $ G.basicUnsafeSlice i n v
-    {-# INLINE basicUnsafeSlice #-}
-    basicUnsafeIndexM (V_EnumSet v) i = G.basicUnsafeIndexM v i
-    {-# INLINE basicUnsafeIndexM #-}
-    basicUnsafeCopy (MV_EnumSet mv) (V_EnumSet v) = G.basicUnsafeCopy mv v
-    {-# INLINE basicUnsafeCopy #-}
-    elemseq _ = seq
-    {-# INLINE elemseq #-}
-
-instance Bits w => Semigroup (EnumSet w a) where
-    (<>) = union
-    {-# INLINE (<>) #-}
-
-instance Bits w => Monoid (EnumSet w a) where
-    mempty = empty
-    {-# INLINE mempty #-}
-
-instance (Bits w, Enum a) => MonoPointed (EnumSet w a) where
-    opoint = singleton
-    {-# INLINE opoint #-}
-
-instance (FiniteBits w, Num w, Enum a) => IsList (EnumSet w a) where
-    type Item (EnumSet w a) = a
-    fromList = fromFoldable
-    {-# INLINE fromList #-}
-    toList = toList
-    {-# INLINE toList #-}
-
-instance (FiniteBits w, Num w, Enum a, ToJSON a) => ToJSON (EnumSet w a) where
-    toJSON = toJSON . toList
-    {-# INLINE toJSON #-}
-    toEncoding = toEncoding . toList
-    {-# INLINE toEncoding #-}
-
-type instance Element (EnumSet w a) = a
-
-instance (FiniteBits w, Num w, Enum a) => MonoFunctor (EnumSet w a) where
-    omap = map
-    {-# INLINE omap #-}
-
-instance (FiniteBits w, Num w, Enum a) => MonoFoldable (EnumSet w a) where
-    ofoldMap = foldMap
-    {-# INLINE ofoldMap #-}
-    ofoldr = foldr
-    {-# INLINE ofoldr #-}
-    ofoldl' = foldl'
-    {-# INLINE ofoldl' #-}
-    ofoldr1Ex = foldr1
-    {-# INLINE ofoldr1Ex #-}
-    ofoldl1Ex' = foldl1'
-    {-# INLINE ofoldl1Ex' #-}
-    otoList = toList
-    {-# INLINE otoList #-}
-    oall = all
-    {-# INLINE oall #-}
-    oany = any
-    {-# INLINE oany #-}
-    onull = null
-    {-# INLINE onull #-}
-    olength64 (EnumSet !w) = bitcount 0 w
-    {-# INLINE olength64 #-}
-    headEx = minimum
-    {-# INLINE headEx #-}
-    lastEx = maximum
-    {-# INLINE lastEx #-}
-    oelem = member
-    {-# INLINE oelem #-}
-    onotElem x = not . member x
-    {-# INLINE onotElem #-}
-
-instance (FiniteBits w, Num w, Enum a) => GrowingAppend (EnumSet w a)
-
-instance (FiniteBits w, Num w, Enum a) => MonoTraversable (EnumSet w a) where
-    otraverse = traverse
-    {-# INLINE otraverse #-}
-
-instance (FiniteBits w, Num w, Eq a, Enum a) => SetContainer (EnumSet w a) where
-    type ContainerKey (EnumSet w a) = a
-    member = member
-    {-# INLINE member #-}
-    notMember = notMember
-    {-# INLINE notMember #-}
-    union = union
-    {-# INLINE union #-}
-    difference = difference
-    {-# INLINE difference #-}
-    intersection = intersection
-    {-# INLINE intersection #-}
-    keys = toList
-    {-# INLINE keys #-}
-
-instance (FiniteBits w, Num w, Eq a, Enum a) => IsSet (EnumSet w a) where
-    insertSet = insert
-    {-# INLINE insertSet #-}
-    deleteSet = delete
-    {-# INLINE deleteSet #-}
-    singletonSet = singleton
-    {-# INLINE singletonSet #-}
-    setFromList = fromFoldable
-    {-# INLINE setFromList #-}
-    setToList = toList
-    {-# INLINE setToList #-}
-
-instance (FiniteBits w, Num w, Enum x, Show x) => Show (EnumSet w x) where
-    showsPrec p xs = showParen (p > 10) $
-        showString "fromList " . shows (toList xs)
-    {-# INLINABLE showsPrec #-}
-
-instance (Bits w, Num w, Enum x, Read x) => Read (EnumSet w x) where
-    readPrec = parens $ prec 10 do
-        Ident "fromList" <- lexP
-        fromFoldable @[] <$> readPrec
-    {-# INLINABLE readPrec #-}
-    readListPrec = readListPrecDefault
-    {-# INLINABLE readListPrec #-}
+type EnumSet a = E.EnumSet (EnumSetRep a) a
 
 {--------------------------------------------------------------------
   Construction
 --------------------------------------------------------------------}
 
 -- | /O(1)/. The empty set.
-empty :: ∀ w a. Bits w
-      => EnumSet w a
-empty = EnumSet zeroBits
+empty :: ∀ a. AsEnumSet a => EnumSet a
+empty = E.empty
 {-# INLINE empty #-}
 
 -- | /O(1)/. A set of one element.
-singleton :: ∀ w a. (Bits w, Enum a)
-          => a -> EnumSet w a
-singleton = EnumSet . bit . fromEnum
+singleton :: ∀ a. AsEnumSet a => a -> EnumSet a
+singleton = E.singleton
 {-# INLINE singleton #-}
 
 -- | /O(n)/. Create a set from a finite foldable data structure.
-fromFoldable :: ∀ f w a. (Foldable f, Bits w, Enum a)
-             => f a -> EnumSet w a
-fromFoldable = EnumSet . F.foldl' (flip $ (.|.) . bit . fromEnum) zeroBits
+fromFoldable :: ∀ f a. (Foldable f, AsEnumSet a) => f a -> EnumSet a
+fromFoldable = E.fromFoldable
+{-# INLINE fromFoldable #-}
 
 {--------------------------------------------------------------------
   Insertion
 --------------------------------------------------------------------}
 
 -- | /O(1)/. Add a value to the set.
-insert :: ∀ w a. (Bits w, Enum a)
-       => a -> EnumSet w a -> EnumSet w a
-insert !x (EnumSet w) = EnumSet . setBit w $ fromEnum x
+insert :: ∀ a. AsEnumSet a => a -> EnumSet a -> EnumSet a
+insert = E.insert
+{-# INLINE insert #-}
 
 {--------------------------------------------------------------------
   Deletion
 --------------------------------------------------------------------}
 
 -- | /O(1)/. Delete a value in the set.
-delete :: ∀ w a. (Bits w, Enum a)
-       => a -> EnumSet w a -> EnumSet w a
-delete !x (EnumSet w) = EnumSet . clearBit w $ fromEnum x
+delete :: ∀ a. AsEnumSet a => a -> EnumSet a -> EnumSet a
+delete = E.delete
+{-# INLINE delete #-}
 
 {--------------------------------------------------------------------
   Query
 --------------------------------------------------------------------}
 
 -- | /O(1)/. Is the value a member of the set?
-member :: ∀ w a. (Bits w, Enum a)
-       => a -> EnumSet w a -> Bool
-member !x (EnumSet w) = testBit w $ fromEnum x
+member :: ∀ a. AsEnumSet a => a -> EnumSet a -> Bool
+member = E.member
+{-# INLINE member #-}
 
 -- | /O(1)/. Is the value not in the set?
-notMember :: ∀ w a. (Bits w, Enum a)
-          => a -> EnumSet w a -> Bool
-notMember !x = not . member x
+notMember :: ∀ a. AsEnumSet a => a -> EnumSet a -> Bool
+notMember = E.notMember
+{-# INLINE notMember #-}
 
 -- | /O(1)/. Is this the empty set?
-null :: ∀ w a. Bits w
-     => EnumSet w a -> Bool
-null (EnumSet w) = zeroBits == w
+null :: ∀ a. AsEnumSet a => EnumSet a -> Bool
+null = E.null
 {-# INLINE null #-}
 
 -- | /O(1)/. The number of elements in the set.
-size :: ∀ w a. (Bits w, Num w)
-     => EnumSet w a -> Int
-size (EnumSet !w) = bitcount 0 w
+size :: ∀ a. AsEnumSet a => EnumSet a -> Int
+size = E.size
+{-# INLINE size #-}
 
 -- | /O(1)/. Is this a subset?
 -- @(s1 `isSubsetOf` s2)@ tells whether @s1@ is a subset of @s2@.
-isSubsetOf :: ∀ w a. (Bits w)
-           => EnumSet w a -> EnumSet w a -> Bool
-isSubsetOf (EnumSet x) (EnumSet y) = x .|. y == y
+isSubsetOf :: ∀ a. AsEnumSet a => EnumSet a -> EnumSet a -> Bool
+isSubsetOf = E.isSubsetOf
 {-# INLINE isSubsetOf #-}
 
 {--------------------------------------------------------------------
@@ -358,34 +170,29 @@ isSubsetOf (EnumSet x) (EnumSet y) = x .|. y == y
 --------------------------------------------------------------------}
 
 -- | /O(1)/. The union of two sets.
-union :: ∀ w a. Bits w
-      => EnumSet w a -> EnumSet w a -> EnumSet w a
-union (EnumSet x) (EnumSet y) = EnumSet $ x .|. y
+union :: ∀ a. AsEnumSet a => EnumSet a -> EnumSet a -> EnumSet a
+union = E.union
 {-# INLINE union #-}
 
 -- | /O(1)/. Difference between two sets.
-difference :: ∀ w a. Bits w
-           => EnumSet w a -> EnumSet w a -> EnumSet w a
-difference (EnumSet x) (EnumSet y) = EnumSet $ (x .|. y) `xor` y
+difference :: ∀ a. AsEnumSet a =>  EnumSet a -> EnumSet a -> EnumSet a
+difference = E.difference
 {-# INLINE difference #-}
 
 -- | /O(1)/. See 'difference'.
-(\\) :: ∀ w a. Bits w
-     => EnumSet w a -> EnumSet w a -> EnumSet w a
-(\\) = difference
+(\\) :: ∀ a. AsEnumSet a => EnumSet a -> EnumSet a -> EnumSet a
+(\\) = E.difference
 infixl 9 \\
 {-# INLINE (\\) #-}
 
 -- | /O(1)/. Elements which are in either set, but not both.
-symmetricDifference :: ∀ w a. Bits w
-                    => EnumSet w a -> EnumSet w a -> EnumSet w a
-symmetricDifference (EnumSet x) (EnumSet y) = EnumSet $ x `xor` y
+symmetricDifference :: ∀ a. AsEnumSet a => EnumSet a -> EnumSet a -> EnumSet a
+symmetricDifference = E.symmetricDifference
 {-# INLINE symmetricDifference #-}
 
 -- | /O(1)/. The intersection of two sets.
-intersection :: ∀ w a. Bits w
-             => EnumSet w a -> EnumSet w a -> EnumSet w a
-intersection (EnumSet x) (EnumSet y) = EnumSet $ x .&. y
+intersection :: ∀ a. AsEnumSet a => EnumSet a -> EnumSet a -> EnumSet a
+intersection = E.intersection
 {-# INLINE intersection #-}
 
 {--------------------------------------------------------------------
@@ -393,27 +200,17 @@ intersection (EnumSet x) (EnumSet y) = EnumSet $ x .&. y
 --------------------------------------------------------------------}
 
 -- | /O(n)/. Filter all elements that satisfy some predicate.
-filter :: ∀ w a. (FiniteBits w, Num w, Enum a)
-       => (a -> Bool) -> EnumSet w a -> EnumSet w a
-filter p (EnumSet w) = EnumSet $ foldlBits' f 0 w
-    where
-      f z i
-        | p $ toEnum i = setBit z i
-        | otherwise    = z
-      {-# INLINE f #-}
+filter :: ∀ a. AsEnumSet a => (a -> Bool) -> EnumSet a -> EnumSet a
+filter = E.filter
+{-# INLINE filter #-}
 
 -- | /O(n)/. Partition the set according to some predicate.
 -- The first set contains all elements that satisfy the predicate,
 -- the second all elements that fail the predicate.
-partition :: ∀ w a. (FiniteBits w, Num w, Enum a)
-          => (a -> Bool) -> EnumSet w a -> (EnumSet w a, EnumSet w a)
-partition p (EnumSet w) = (EnumSet yay, EnumSet nay)
-    where
-      (yay, nay) = foldlBits' f (0, 0) w
-      f (x, y) i
-          | p $ toEnum i = (setBit x i, y)
-          | otherwise    = (x, setBit y i)
-      {-# INLINE f #-}
+partition :: ∀ a. AsEnumSet a
+          => (a -> Bool) -> EnumSet a -> (EnumSet a, EnumSet a)
+partition = E.partition
+{-# INLINE partition #-}
 
 {--------------------------------------------------------------------
   Map
@@ -423,226 +220,120 @@ partition p (EnumSet w) = (EnumSet yay, EnumSet nay)
 -- @'map' f s@ is the set obtained by applying @f@ to each element of @s@.
 --
 -- It's worth noting that the size of the result may be smaller if,
--- for some @(x,y)@, @x \/= y && f x == f y@.
-map :: ∀ w a b. (FiniteBits w, Num w, Enum a, Enum b)
-    => (a -> b) -> EnumSet w a -> EnumSet w b
-map f0 (EnumSet w) = EnumSet $ foldlBits' f 0 w
-    where
-      f z i = setBit z $ fromEnum $ f0 (toEnum i)
-      {-# INLINE f #-}
+-- for some @(x,y)@, @x \/= y && f x == f y@
+map :: ∀ a b. (AsEnumSet a, AsEnumSet b, EnumSetRep a ~ EnumSetRep b)
+    => (a -> b) -> EnumSet a -> EnumSet b
+map = E.map
+{-# INLINE map #-}
 
 {--------------------------------------------------------------------
   Folds
 --------------------------------------------------------------------}
 
 -- | /O(n)/. Left fold.
-foldl :: ∀ w a b. (FiniteBits w, Num w, Enum a)
-      => (b -> a -> b) -> b -> EnumSet w a -> b
-foldl f z (EnumSet w) = foldlBits ((. toEnum) . f) z w
+foldl :: ∀ a b. AsEnumSet a => (b -> a -> b) -> b -> EnumSet a -> b
+foldl = E.foldl
 {-# INLINE foldl #-}
 
 -- | /O(n)/. Left fold with strict accumulator.
-foldl' :: ∀ w a b. (FiniteBits w, Num w, Enum a)
-       => (b -> a -> b) -> b -> EnumSet w a -> b
-foldl' f z (EnumSet w) = foldlBits' ((. toEnum) . f) z w
+foldl' :: ∀ a b. AsEnumSet a => (b -> a -> b) -> b -> EnumSet a -> b
+foldl' = E.foldl'
 {-# INLINE foldl' #-}
 
 -- | /O(n)/. Right fold.
-foldr :: ∀ w a b. (FiniteBits w, Num w, Enum a)
-      => (a -> b -> b) -> b -> EnumSet w a -> b
-foldr f z (EnumSet w) = foldrBits (f . toEnum) z w
+foldr :: ∀ a b. AsEnumSet a => (a -> b -> b) -> b -> EnumSet a -> b
+foldr = E.foldr
 {-# INLINE foldr #-}
 
 -- | /O(n)/. Right fold with strict accumulator.
-foldr' :: ∀ w a b. (FiniteBits w, Num w,  Enum a)
-       => (a -> b -> b) -> b -> EnumSet w a -> b
-foldr' f z (EnumSet w) = foldrBits' (f . toEnum) z w
+foldr' :: ∀ a b. AsEnumSet a => (a -> b -> b) -> b -> EnumSet a -> b
+foldr' = E.foldr'
 {-# INLINE foldr' #-}
 
 -- | /O(n)/. Left fold on non-empty sets.
-foldl1 :: ∀ w a. (FiniteBits w, Num w, Enum a)
-       => (a -> a -> a) -> EnumSet w a -> a
-foldl1 f = fold1Aux lsb $ foldlBits ((. toEnum) . f)
+foldl1 :: ∀ a. AsEnumSet a => (a -> a -> a) -> EnumSet a -> a
+foldl1 = E.foldl1
 {-# INLINE foldl1 #-}
 
 -- | /O(n)/. Left fold on non-empty sets with strict accumulator.
-foldl1' :: ∀ w a. (FiniteBits w, Num w, Enum a)
-        => (a -> a -> a) -> EnumSet w a -> a
-foldl1' f = fold1Aux lsb $ foldlBits' ((.toEnum) . f)
+foldl1' :: ∀ a. AsEnumSet a => (a -> a -> a) -> EnumSet a -> a
+foldl1' = E.foldl1'
 {-# INLINE foldl1' #-}
 
 -- | /O(n)/. Right fold on non-empty sets.
-foldr1 :: ∀ w a. (FiniteBits w, Num w, Enum a)
-       => (a -> a -> a) -> EnumSet w a -> a
-foldr1 f = fold1Aux msb $ foldrBits (f . toEnum)
+foldr1 :: ∀ a. AsEnumSet a => (a -> a -> a) -> EnumSet a -> a
+foldr1 = E.foldr1
 {-# INLINE foldr1 #-}
 
 -- | /O(n)/. Right fold on non-empty sets with strict accumulator.
-foldr1' :: ∀ w a. (FiniteBits w, Num w, Enum a)
-        => (a -> a -> a) -> EnumSet w a -> a
-foldr1' f = fold1Aux msb $ foldrBits' (f . toEnum)
-{-# INLINE foldr1' #-}
+foldr1' :: ∀ a. AsEnumSet a => (a -> a -> a) -> EnumSet a -> a
+foldr1' = E.foldr1'
+{-# INLINE foldr1'  #-}
 
 -- | /O(n)/. Map each element of the structure to a monoid, and combine the
 -- results.
-foldMap :: ∀ m w a. (Monoid m, FiniteBits w, Num w, Enum a)
-        => (a -> m) -> EnumSet w a -> m
-foldMap f (EnumSet w) = foldrBits (mappend . f . toEnum) mempty w
+foldMap :: ∀ m a. (Monoid m, AsEnumSet a) => (a -> m) -> EnumSet a -> m
+foldMap = E.foldMap
 {-# INLINE foldMap #-}
 
-traverse :: ∀ f w a. (Applicative f, FiniteBits w, Num w, Enum a)
-         => (a -> f a) -> EnumSet w a -> f (EnumSet w a)
-traverse f (EnumSet w) = EnumSet <$>
-                         foldrBits
-                         (liftA2 (flip setBit) . fmap fromEnum . f . toEnum)
-                         (pure zeroBits)
-                         w
+traverse :: ∀ f a. (Applicative f, AsEnumSet a)
+         => (a -> f a) -> EnumSet a -> f (EnumSet a)
+traverse = E.traverse
 {-# INLINE traverse #-}
 
 -- | /O(n)/. Check if all elements satisfy some predicate.
-all :: ∀ w a. (FiniteBits w, Num w, Enum a)
-    => (a -> Bool) -> EnumSet w a -> Bool
-all p (EnumSet w) = let lb = lsb w in go lb (w `unsafeShiftR` lb)
-  where
-    go !_ 0 = True
-    go bi n
-      | n `testBit` 0 && not (p $ toEnum bi) = False
-      | otherwise = go (bi + 1) (n `unsafeShiftR` 1)
+all :: ∀ a. AsEnumSet a => (a -> Bool) -> EnumSet a -> Bool
+all = E.all
+{-# INLINE all #-}
 
 -- | /O(n)/. Check if any element satisfies some predicate.
-any :: ∀ w a. (FiniteBits w, Num w, Enum a)
-    => (a -> Bool) -> EnumSet w a -> Bool
-any p (EnumSet w) = let lb = lsb w in go lb (w `unsafeShiftR` lb)
-  where
-    go !_ 0 = False
-    go bi n
-      | n `testBit` 0 && p (toEnum bi) = True
-      | otherwise = go (bi + 1) (n `unsafeShiftR` 1)
+any :: ∀ a. AsEnumSet a => (a -> Bool) -> EnumSet a -> Bool
+any = E.any
+{-# INLINE any #-}
 
 {--------------------------------------------------------------------
   Min/Max
 --------------------------------------------------------------------}
 
 -- | /O(1)/. The minimal element of a non-empty set.
-minimum :: ∀ w a. (FiniteBits w, Num w, Enum a)
-        => EnumSet w a -> a
-minimum (EnumSet 0) = error "empty EnumSet"
-minimum (EnumSet w) = toEnum $ lsb w
+minimum :: ∀ a. AsEnumSet a => EnumSet a -> a
+minimum = E.minimum
+{-# INLINE minimum #-}
 
 -- | /O(1)/. The maximal element of a non-empty set.
-maximum :: ∀ w a. (FiniteBits w, Num w, Enum a)
-        => EnumSet w a -> a
-maximum (EnumSet 0) = error "empty EnumSet"
-maximum (EnumSet w) = toEnum $ msb w
+maximum :: ∀ a. AsEnumSet a => EnumSet a -> a
+maximum = E.maximum
+{-# INLINE maximum #-}
 
 -- | /O(1)/. Delete the minimal element.
-deleteMin :: ∀ w a. (FiniteBits w, Num w)
-          => EnumSet w a -> EnumSet w a
-deleteMin (EnumSet 0) = EnumSet 0
-deleteMin (EnumSet w) = EnumSet $ clearBit w $ lsb w
+deleteMin :: ∀ a. AsEnumSet a => EnumSet a -> EnumSet a
+deleteMin = E.deleteMin
+{-# INLINE deleteMin #-}
 
 -- | /O(1)/. Delete the maximal element.
-deleteMax :: ∀ w a. (FiniteBits w, Num w)
-          => EnumSet w a -> EnumSet w a
-deleteMax (EnumSet 0) = EnumSet 0
-deleteMax (EnumSet w) = EnumSet $ clearBit w $ msb w
+deleteMax :: ∀ a. AsEnumSet a => EnumSet a -> EnumSet a
+deleteMax = E.deleteMax
+{-# INLINE deleteMax #-}
 
 -- | /O(1)/. Retrieves the minimal element of the set,
 -- and the set stripped of that element,
 -- or Nothing if passed an empty set.
-minView :: ∀ w a. (FiniteBits w, Num w, Enum a)
-        => EnumSet w a -> Maybe (a, EnumSet w a)
-minView (EnumSet 0) = Nothing
-minView (EnumSet w) = let i = lsb w in Just (toEnum i, EnumSet $ clearBit w i)
+minView :: ∀ a. AsEnumSet a => EnumSet a -> Maybe (a, EnumSet a)
+minView = E.minView
+{-# INLINE minView #-}
 
 -- | /O(1)/. Retrieves the maximal element of the set,
 -- and the set stripped of that element,
 -- or Nothing if passed an empty set.
-maxView :: ∀ w a. (FiniteBits w, Num w, Enum a)
-        => EnumSet w a -> Maybe (a, EnumSet w a)
-maxView (EnumSet 0) = Nothing
-maxView (EnumSet w) = let i = msb w in Just (toEnum i, EnumSet $ clearBit w i)
+maxView :: ∀ a. AsEnumSet a => EnumSet a -> Maybe (a, EnumSet a)
+maxView = E.maxView
+{-# INLINE maxView #-}
 
 {--------------------------------------------------------------------
   Conversion
 --------------------------------------------------------------------}
 
 -- | /O(n)/. Convert the set to a list of values.
-toList :: ∀ w a. (FiniteBits w, Num w, Enum a)
-       => EnumSet w a -> [a]
-toList (EnumSet w) = build \c n -> foldrBits (c . toEnum) n w
+toList :: ∀ a. AsEnumSet a => EnumSet a -> [a]
+toList = E.toList
 {-# INLINE toList #-}
-
-{--------------------------------------------------------------------
-  Utility functions
---------------------------------------------------------------------}
-
-bitcount :: ∀ i w. (Bits w, Num w, Num i) => i -> w -> i
-bitcount a 0 = a
-bitcount !a x = bitcount (a+1) (x .&. (x - 1))
-
-lsb :: ∀ w. (FiniteBits w, Num w) => w -> Int
-lsb n0 = go 0 n0 $ finiteBitSize n0 `quot` 2
-  where
-    go b n 1 = case n .&. 1 of
-        0 -> 1 + b
-        _ -> b
-    go b n i = case n .&. (bit i - 1) of
-        0 -> go (i + b) (n `unsafeShiftR` i) (i `quot` 2)
-        _ -> go b       n                    (i `quot` 2)
-{-# INLINE lsb #-}
-
-msb :: ∀ w. (FiniteBits w, Num w) => w -> Int
-msb n0 = go 0 n0 $ finiteBitSize n0 `quot` 2
-  where
-    go b n 1 = case n .&. 2 of
-        0 -> b
-        _ -> 1 + b
-    go b n i = case n .&. (bit (i * 2) - bit i) of
-        0 -> go b       n                    (i `quot` 2)
-        _ -> go (i + b) (n `unsafeShiftR` i) (i `quot` 2)
-{-# INLINE msb #-}
-
-foldlBits :: ∀ w a. (FiniteBits w, Num w) => (a -> Int -> a) -> a -> w -> a
-foldlBits  f z w = let lb = lsb w in go lb z (w `unsafeShiftR` lb)
-  where
-    go !_ acc 0 = acc
-    go bi acc n
-      | n `testBit` 0 = go (bi + 1) (f acc bi) (n `unsafeShiftR` 1)
-      | otherwise     = go (bi + 1)    acc     (n `unsafeShiftR` 1)
-{-# INLINE foldlBits #-}
-
-foldlBits' :: ∀ w a. (FiniteBits w, Num w) => (a -> Int -> a) -> a -> w -> a
-foldlBits' f z w = let lb = lsb w in go lb z (w `unsafeShiftR` lb)
-  where
-    go !_ !acc 0 = acc
-    go bi acc n
-      | n `testBit` 0 = go (bi + 1) (f acc bi) (n `unsafeShiftR` 1)
-      | otherwise     = go (bi + 1)    acc     (n `unsafeShiftR` 1)
-{-# INLINE foldlBits' #-}
-
-foldrBits :: ∀ w a. (FiniteBits w, Num w) => (Int -> a -> a) -> a -> w -> a
-foldrBits f z w = let lb = lsb w in go lb (w `unsafeShiftR` lb)
-  where
-    go !_ 0 = z
-    go bi n
-      | n `testBit` 0 = f bi (go (bi + 1) (n `unsafeShiftR` 1))
-      | otherwise     =       go (bi + 1) (n `unsafeShiftR` 1)
-{-# INLINE foldrBits #-}
-
-foldrBits' :: ∀ w a. (FiniteBits w, Num w) => (Int -> a -> a) -> a -> w -> a
-foldrBits' f z w = let lb = lsb w in go lb (w `unsafeShiftR` lb)
-  where
-    go !_ 0 = z
-    go bi n
-      | n `testBit` 0 = f bi $! go (bi + 1) (n `unsafeShiftR` 1)
-      | otherwise     =         go (bi + 1) (n `unsafeShiftR` 1)
-{-# INLINE foldrBits' #-}
-
-fold1Aux :: ∀ w a. (Bits w, Num w, Enum a)
-         => (w -> Int) -> (a -> w -> a) -> EnumSet w a -> a
-fold1Aux _      _ (EnumSet 0) = error "empty EnumSet"
-fold1Aux getBit f (EnumSet w) = f (toEnum gotBit) (clearBit w gotBit)
-  where
-    gotBit = getBit w
-{-# INLINE fold1Aux #-}

@@ -10,7 +10,7 @@ import Test.QuickCheck
 import Test.QuickCheck.Function
 import Unsafe.Coerce (unsafeCoerce)
 
-import qualified Data.Enum.Set as E
+import qualified Data.Enum.Set.Base as E
 
 main :: IO ()
 main = defaultMain

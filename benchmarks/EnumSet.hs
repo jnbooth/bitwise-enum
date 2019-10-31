@@ -13,22 +13,23 @@ import Control.Exception (evaluate)
 import Data.Bits
 import Data.List (foldl', transpose)
 import Data.WideWord (Word128)
-import Data.Word (Word8, Word16, Word32, Word64)
+import Data.Word (Word16, Word32, Word64)
 import qualified Gauge as G
 import Gauge (Benchmark)
+import Type.Reflection
 
-import qualified Data.Enum.Set as E
+import qualified Data.Enum.Set.Base as E
 
 main :: IO ()
 main = G.defaultMain . concat . transpose =<< sequence
-    [ benchWord @Word8
+    [ benchWord @Word
     , benchWord @Word16
     , benchWord @Word32
     , benchWord @Word64
     , benchWord @Word128
     ]
 
-benchWord :: ∀ w. (FiniteBits w, NFData w, Num w) => IO [Benchmark]
+benchWord :: ∀ w. (FiniteBits w, NFData w, Num w, Typeable w) => IO [Benchmark]
 benchWord = do
     let s = E.fromFoldable elems :: E.EnumSet w Int
         s_even = E.fromFoldable elems_even :: E.EnumSet w Int
@@ -74,11 +75,11 @@ benchWord = do
       , bench "toList" E.toList s
       ]
   where
-    maxVal = (2 :: Int) ^ (12 :: Int)
+    maxVal = 15
     elems = [0..maxVal]
     elems_even = [2,4..maxVal]
     elems_odd = [1,3..maxVal]
-    prefix = "Word" ++ show (finiteBitSize (zeroBits :: w)) ++ " "
+    prefix = show (typeRep @w) ++ " "
     bench :: String -> (a -> b) -> a -> G.Benchmark
     bench label f = G.bench (prefix ++ label) . G.whnf f
 
