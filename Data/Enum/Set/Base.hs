@@ -445,7 +445,7 @@ map :: ∀ w a b. (FiniteBits w, Num w, Enum a, Enum b)
 map = map'
 {-# INLINE map #-}
 
--- | /O(1)/. Apply 'map' while converting the underlying representation of the
+-- | /O(n)/. Apply 'map' while converting the underlying representation of the
 -- set to some other representation.
 map' :: ∀ v w a b. (FiniteBits v, FiniteBits w, Num v, Num w, Enum a, Enum b)
      => (a -> b) -> EnumSet v a -> EnumSet w b

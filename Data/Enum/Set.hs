@@ -228,8 +228,6 @@ partition = E.partition
 --
 -- It's worth noting that the size of the result may be smaller if,
 -- for some @(x,y)@, @x \/= y && f x == f y@
--- | /O(1)/. Apply 'map' while converting the underlying representation of the
--- set to some other representation.
 map :: ∀ a b. (AsEnumSet a, AsEnumSet b) => (a -> b) -> EnumSet a -> EnumSet b
 map = E.map'
 
