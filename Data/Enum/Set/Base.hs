@@ -6,7 +6,6 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE PolyKinds                  #-}
-{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedTuples              #-}
@@ -70,6 +69,7 @@ module Data.Enum.Set.Base
 
   -- * Map
   , map
+  , map'
 
   -- * Folds
   , foldl, foldl', foldr, foldr'
@@ -429,7 +429,14 @@ partition p (EnumSet w) = (EnumSet yay, EnumSet nay)
 -- for some @(x,y)@, @x \/= y && f x == f y@.
 map :: ∀ w a b. (FiniteBits w, Num w, Enum a, Enum b)
     => (a -> b) -> EnumSet w a -> EnumSet w b
-map f0 (EnumSet w) = EnumSet $ foldlBits' f 0 w
+map = map'
+{-# INLINE map #-}
+
+-- | /O(1)/. Apply 'map' while converting the underlying representation of the
+-- set to some other representation.
+map' :: ∀ v w a b. (FiniteBits v, FiniteBits w, Num v, Num w, Enum a, Enum b)
+     => (a -> b) -> EnumSet v a -> EnumSet w b
+map' f0 (EnumSet w) = EnumSet $ foldlBits' f 0 w
     where
       f z i = setBit z $ fromEnum $ f0 (toEnum i)
       {-# INLINE f #-}
