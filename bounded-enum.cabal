@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9a3f45d20e9d2f9daeae50201dcf4f4f088aa8c14a09ebc57c1d34eacf4ff331
+-- hash: f1319ae4985f4c41e0d3a236651553eedb2887980d55fdf5c5c7a85946cf0666
 
 name:           bounded-enum
 version:        0.1.0.0
@@ -29,7 +29,7 @@ library
       Paths_bounded_enum
   hs-source-dirs:
       ./
-  ghc-options: -Wall -O2 -fwarn-tabs -ferror-spans
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -ferror-spans -funbox-small-strict-fields -O2
   build-depends:
       aeson
     , base
@@ -46,6 +46,7 @@ test-suite enumset-test-suite
       Paths_bounded_enum
   hs-source-dirs:
       tests
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -ferror-spans -funbox-small-strict-fields
   build-depends:
       QuickCheck
     , aeson
@@ -66,7 +67,7 @@ benchmark enumset-benchmarks
       Paths_bounded_enum
   hs-source-dirs:
       benchmarks
-  ghc-options: -rtsopts -threaded -with-rtsopts=-N -Wall -O2 -fwarn-tabs -ferror-spans
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -ferror-spans -funbox-small-strict-fields -rtsopts -threaded -with-rtsopts=-N -O2
   build-depends:
       aeson
     , base
