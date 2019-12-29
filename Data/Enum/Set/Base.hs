@@ -226,7 +226,9 @@ instance (FiniteBits w, Num w, Enum a) => MonoFoldable (EnumSet w a) where
     {-# INLINE oany #-}
     onull = null
     {-# INLINE onull #-}
-    olength64 (EnumSet !w) = bitcount 0 w
+    olength = size
+    {-# INLINE olength #-}
+    olength64 w = fromIntegral $ size w
     {-# INLINE olength64 #-}
     headEx = minimum
     {-# INLINE headEx #-}
@@ -345,7 +347,7 @@ null (EnumSet w) = zeroBits == w
 -- | /O(1)/. The number of elements in the set.
 size :: ∀ w a. (Bits w, Num w)
      => EnumSet w a -> Int
-size (EnumSet !w) = bitcount 0 w
+size (EnumSet !w) = popCount w
 
 -- | /O(1)/. Is this a subset?
 -- @(s1 `isSubsetOf` s2)@ tells whether @s1@ is a subset of @s2@.
@@ -577,10 +579,6 @@ toList (EnumSet w) = build \c n -> foldrBits (c . toEnum) n w
 {--------------------------------------------------------------------
   Utility functions
 --------------------------------------------------------------------}
-
-bitcount :: ∀ i w. (Bits w, Num w, Num i) => i -> w -> i
-bitcount a 0 = a
-bitcount !a x = bitcount (a+1) (x .&. (x - 1))
 
 lsb :: ∀ w. (FiniteBits w, Num w) => w -> Int
 lsb n0 = go 0 n0 $ finiteBitSize n0 `quot` 2
