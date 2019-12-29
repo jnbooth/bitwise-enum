@@ -27,6 +27,7 @@
 -- Otherwise, options include 'Data.Word.Word32', 'Data.Word.Word64', and the
 -- [wide-word](https://hackage.haskell.org/package/wide-word-0.1.0.8/) package's
 -- [Data.WideWord.Word128](https://hackage.haskell.org/package/wide-word-0.1.0.8/docs/Data-WideWord-Word128.html).
+-- Foreign types may also be used.
 --
 -- Note: complexity calculations assume that @EnumSetRep E@ implements 'Bits'
 -- with constant-time functions, as is the case with 'Data.Word.Word' etc. If
@@ -88,6 +89,7 @@ module Data.Enum.Set
 
   -- * Conversion
   , toList
+  , fromRaw
   ) where
 
 import Prelude hiding (all, any, filter, foldl, foldl1, foldMap, foldr, foldr1, map, maximum, minimum, null, traverse)
@@ -342,3 +344,9 @@ maxView = E.maxView
 toList :: ∀ a. AsEnumSet a => EnumSet a -> [a]
 toList = E.toList
 {-# INLINE toList #-}
+
+-- | /O(1)/. Convert a representation into an @EnumSet@.
+-- Intended for use with foreign types.
+fromRaw :: ∀ a. AsEnumSet a => EnumSetRep a -> EnumSet a
+fromRaw = E.fromRaw
+{-# INLINE fromRaw #-}

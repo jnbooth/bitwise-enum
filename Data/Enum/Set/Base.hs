@@ -33,6 +33,7 @@
 -- Otherwise, options include 'Data.Word.Word32', 'Data.Word.Word64', and the
 -- [wide-word](https://hackage.haskell.org/package/wide-word-0.1.0.8/) package's
 -- [Data.WideWord.Word128](https://hackage.haskell.org/package/wide-word-0.1.0.8/docs/Data-WideWord-Word128.html).
+-- Foreign types may also be used.
 --
 -- "Data.Enum.Set" provides an alternate type alias that moves the underlying
 -- representation to an associated type token, so that e.g.
@@ -100,6 +101,7 @@ module Data.Enum.Set.Base
 
   -- * Conversion
   , toList
+  , fromRaw
   ) where
 
 import qualified GHC.Exts
@@ -593,6 +595,12 @@ toList :: ∀ w a. (FiniteBits w, Num w, Enum a)
        => EnumSet w a -> [a]
 toList (EnumSet w) = build \c n -> foldrBits (c . toEnum) n w
 {-# INLINE toList #-}
+
+-- | /O(1)/. Convert a representation into an @EnumSet@.
+-- Intended for use with foreign types.
+fromRaw :: ∀ w a. w -> EnumSet w a
+fromRaw = EnumSet
+{-# INLINE fromRaw #-}
 
 {--------------------------------------------------------------------
   Utility functions
