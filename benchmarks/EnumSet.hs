@@ -13,7 +13,7 @@ import Control.Exception (evaluate)
 import Data.Bits
 import Data.List (foldl', transpose)
 import Data.WideWord (Word128)
-import Data.Word (Word16, Word32, Word64)
+import Data.Word (Word16, Word64)
 import qualified Gauge as G
 import Gauge (Benchmark)
 import Type.Reflection
@@ -24,7 +24,6 @@ main :: IO ()
 main = G.defaultMain . concat . transpose =<< sequence
     [ benchWord @Word
     , benchWord @Word16
-    , benchWord @Word32
     , benchWord @Word64
     , benchWord @Word128
     ]

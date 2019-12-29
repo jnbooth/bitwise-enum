@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 import Prelude
@@ -160,11 +161,11 @@ prop_intersection x y =
 
 -- * Filter
 
-prop_filter :: ES -> Key -> Bool
-prop_filter s i = E.partition odd s == (E.filter odd s, E.filter even s)
+prop_filter :: ES -> Bool
+prop_filter s = E.partition odd s == (E.filter odd s, E.filter even s)
 
-prop_partition :: ES -> Key -> Bool
-prop_partition s i = case E.partition odd s of
+prop_partition :: ES -> Bool
+prop_partition s = case E.partition odd s of
     (s1,s2) -> all odd (E.toList s1) && all even (E.toList s2)
                && s == s1 `E.union` s2
 

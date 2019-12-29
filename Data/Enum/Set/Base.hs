@@ -119,8 +119,8 @@ import Foreign.Storable (Storable)
 import GHC.Exts (IsList(Item), build)
 import Text.Read
 
-import qualified Data.Vector.Generic.Base as G
-import qualified Data.Vector.Generic.Mutable.Base as M
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Primitive as P
 
 import qualified Data.Containers
@@ -280,6 +280,8 @@ instance (FiniteBits w, Num w, Eq a, Enum a) => IsSet (EnumSet w a) where
     {-# INLINE setFromList #-}
     setToList = toList
     {-# INLINE setToList #-}
+    filterSet = filter
+    {-# INLINE filterSet #-}
 
 instance (FiniteBits w, Num w, Enum x, Show x) => Show (EnumSet w x) where
     showsPrec p xs = showParen (p > 10) $

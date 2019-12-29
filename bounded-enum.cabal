@@ -1,13 +1,14 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
---
--- see: https://github.com/sol/hpack
---
--- hash: f1319ae4985f4c41e0d3a236651553eedb2887980d55fdf5c5c7a85946cf0666
-
 name:           bounded-enum
 version:        0.1.0.0
+synopsis:       Bitwise operations on enumerations
+description:
+    Bitwise operations on enumerations.
+    .
+    ["Data.Enum.Set"] Constant-time sets using bit flags.
+    .
+    ["Data.Enum.Memo"] Constant-time lookup memoization for functions on enumerated types.
 homepage:       https://github.com/jnbooth/bounded-enum#readme
 bug-reports:    https://github.com/jnbooth/bounded-enum/issues
 author:         Joshua Booth <joshua.n.booth@gmail.com>
@@ -31,12 +32,11 @@ library
       ./
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -ferror-spans -funbox-small-strict-fields -O2
   build-depends:
-      aeson
-    , base
-    , containers
-    , deepseq
-    , mono-traversable
-    , vector
+      aeson >=0.11 && <1.4.7
+    , base >=4.5 && <5
+    , deepseq >=1.1 && <1.4.5
+    , mono-traversable >=1.0.12 && <1.0.16
+    , vector >=0.11 && <0.12.1
   default-language: Haskell2010
 
 test-suite enumset-test-suite
@@ -48,16 +48,15 @@ test-suite enumset-test-suite
       tests
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -ferror-spans -funbox-small-strict-fields
   build-depends:
-      QuickCheck
-    , aeson
+      QuickCheck >=2.13.2
+    , aeson >=0.11 && <1.4.7
     , base
     , bounded-enum
-    , containers
-    , deepseq
-    , mono-traversable
-    , test-framework
-    , test-framework-quickcheck2
-    , vector
+    , deepseq >=1.1 && <1.4.5
+    , mono-traversable >=1.0.12 && <1.0.16
+    , test-framework >=0.8.2.0
+    , test-framework-quickcheck2 >=0.3.0.5
+    , vector >=0.11 && <0.12.1
   default-language: Haskell2010
 
 benchmark enumset-benchmarks
@@ -69,13 +68,12 @@ benchmark enumset-benchmarks
       benchmarks
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -ferror-spans -funbox-small-strict-fields -rtsopts -threaded -with-rtsopts=-N -O2
   build-depends:
-      aeson
+      aeson >=0.11 && <1.4.7
     , base
     , bounded-enum
-    , containers
-    , deepseq
-    , gauge
-    , mono-traversable
-    , vector
-    , wide-word
+    , deepseq >=1.1 && <1.4.5
+    , gauge >=0.2.5
+    , mono-traversable >=1.0.12 && <1.0.16
+    , vector >=0.11 && <0.12.1
+    , wide-word >=0.1.0.9
   default-language: Haskell2010
