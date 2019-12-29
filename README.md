@@ -1,2 +1,2 @@
-# bounded-enum-set
-Bitwise generic sets over enumerations.
+# bounded-enum
+Bitwise operations on enumerations.
