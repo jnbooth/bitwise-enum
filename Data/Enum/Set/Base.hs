@@ -11,29 +11,38 @@
 {-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE UnicodeSyntax              #-}
 
--- | Efficient sets over bounded enumerations, using bitwise operations
--- based on [containers](https://hackage.haskell.org/package/containers-0.6.0.1/docs/src/Data.IntSet.Internal.html)
--- and [EdisonCore](https://hackage.haskell.org/package/EdisonCore-1.3.2.1/docs/src/Data-Edison-Coll-EnumSet.html).
+-- | Efficient sets over bounded enumerations, using bitwise operations based on
+-- [containers](https://hackage.haskell.org/package/containers-0.6.0.1/docs/src/Data.IntSet.Internal.html)
+-- and
+-- [EdisonCore](https://hackage.haskell.org/package/EdisonCore-1.3.2.1/docs/src/Data-Edison-Coll-EnumSet.html).
+-- In many cases, @EnumSet@s may be optimised away entirely by constant folding.
+-- For example, GHC can replace 'GHC.Exts.fromList` of constant values with the
+-- resulting word representation during compilation.
 --
 -- For type @EnumSet W E@, @W@ should be a 'Word'-like type that implements
 -- 'Bits' and 'Num', and @E@ should be a type that implements 'Eq' and 'Enum'
 -- equivalently and is a bijection to 'Int'.
 --
--- @EnumSet W E@ can only store @E@s with 'fromEnum' greater than 0 and less
--- than the number of bits in @W@, so it is best for @E@ to be a type that
--- derives 'Eq' and 'Enum' and for @W@ to have more bits than the number of
--- constructors of @E@.
+-- @EnumSet W E@ can only store a value of @E@ if the result of applying
+-- 'fromEnum' to the value is positive and less than the number of bits in @W@.
+-- For this reason, it is preferable for @E@ to be a type that derives 'Eq' and
+-- 'Enum', and for @W@ to have more bits than the number of constructors of @E@.
 --
--- For type @EnumSet W E@, if the highest @fronEnum@ value of @E@ is 29,
+-- For type @EnumSet W E@, if the highest @fromEnum@ value of @E@ is 29,
 -- @W@ should be 'Data.Word.Word', because it always has at least 30 bits.
 -- Otherwise, options include 'Data.Word.Word32', 'Data.Word.Word64', and the
 -- [wide-word](https://hackage.haskell.org/package/wide-word-0.1.0.8/) package's
 -- [Data.WideWord.Word128](https://hackage.haskell.org/package/wide-word-0.1.0.8/docs/Data-WideWord-Word128.html).
 --
 -- "Data.Enum.Set" provides an alternate type alias that moves the underlying
--- representation to an associated type token, so that e.g. @EnumSet MyEnum@
--- replaces @EnumSet Word64 MyEnum@, and reexports this module with adjusted
--- type signatures.
+-- representation to an associated type token, so that e.g.
+-- @EnumSet Word64 MyEnum@ is replaced by @EnumSet MyEnum@, and reexports this
+-- module with adjusted type signatures.
+--
+-- Note: complexity calculations assume that @W@ implements 'Bits' with
+-- constant-time functions, as is the case with 'Data.Word.Word' etc. If this
+-- is not the case, the complexity of those operations should be added to the
+-- complexity of 'EnumSet' functions.
 module Data.Enum.Set.Base
   ( -- * Set type
     EnumSet

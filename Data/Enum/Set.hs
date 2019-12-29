@@ -3,30 +3,35 @@
 {-# LANGUAGE TypeFamilies     #-}
 {-# LANGUAGE UnicodeSyntax    #-}
 
--- | Efficient sets over bounded enumerations, using bitwise operations
--- based on [containers](https://hackage.haskell.org/package/containers-0.6.0.1/docs/src/Data.IntSet.Internal.html)
--- and [EdisonCore](https://hackage.haskell.org/package/EdisonCore-1.3.2.1/docs/src/Data-Edison-Coll-EnumSet.html).
+-- | Efficient sets over bounded enumerations, using bitwise operations based on
+-- [containers](https://hackage.haskell.org/package/containers-0.6.0.1/docs/src/Data.IntSet.Internal.html)
+-- and
+-- [EdisonCore](https://hackage.haskell.org/package/EdisonCore-1.3.2.1/docs/src/Data-Edison-Coll-EnumSet.html).
+-- In many cases, @EnumSet@s may be optimised away entirely by constant folding.
+-- For example, GHC can replace 'GHC.Exts.fromList` of constant values with the
+-- resulting word representation during compilation.
 --
--- For @E@, @EnumSetRep E@ should be a 'Word'-like type that implements
+-- For type @EnumSet W E@, @W@ should be a 'Word'-like type that implements
 -- 'Bits' and 'Num', and @E@ should be a type that implements 'Eq' and 'Enum'
 -- equivalently and is a bijection to 'Int'.
 --
--- @EnumSet E@ can only store @E@s with 'fromEnum' greater than 0 and less
--- than the number of bits in @EnumSetRep@, so it is best for @E@ to be a type
--- that derives 'Eq' and 'Enum' and for @EnumSetRep E@ to have more bits than
--- the number of constructors of @E@.
+-- @EnumSet E@ can only store a value of @E@ if the result of applying
+-- 'fromEnum' to the value is positive and less than the number of bits in
+-- @EnumSetRep E@. For this reason, it is preferable for @E@ to be a type that
+-- derives 'Eq' and 'Enum', and for @EnumSetRep E@ to have more bits than the
+-- number of constructors of @E@.
 --
--- If the highest @fronEnum@ value of @E@ is 29, @EnumSetRep E@ should be
+-- If the highest @fromEnum@ value of @E@ is 29, @EnumSetRep E@ should be
 -- 'Data.Word.Word', because it always has at least 30 bits. This is the
 -- default implementation.
 -- Otherwise, options include 'Data.Word.Word32', 'Data.Word.Word64', and the
 -- [wide-word](https://hackage.haskell.org/package/wide-word-0.1.0.8/) package's
 -- [Data.WideWord.Word128](https://hackage.haskell.org/package/wide-word-0.1.0.8/docs/Data-WideWord-Word128.html).
 --
--- "Data.Enum.Set.Base" provides the underlying data type, in which the word
--- type used as the representation is a parameter of the @EnumSet@ itself, e.g.
--- @EnumSet Word64 MyEnum@. This module reexports its functions with adjusted
--- type signatures.
+-- Note: complexity calculations assume that @EnumSetRep E@ implements 'Bits'
+-- with constant-time functions, as is the case with 'Data.Word.Word' etc. If
+-- this is not the case, the complexity of those operations should be added to
+-- the complexity of 'EnumSet' functions.
 module Data.Enum.Set
   ( AsEnumSet(..)
   -- * Set type
