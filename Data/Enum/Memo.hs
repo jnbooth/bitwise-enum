@@ -38,7 +38,7 @@ memoize2 :: ∀ k1 k2 v.
             )
          => (k1 -> k2 -> v) -> k1 -> k2 -> v
 memoize2 f = case array bounds vals of
-    memo -> \k1 k2 -> memo ! 
+    memo -> \k1 k2 -> memo !
             ( fromEnum k1
             , fromEnum k2
             )
@@ -58,7 +58,7 @@ memoize2 f = case array bounds vals of
                 , k2 <- [minBound..maxBound]]
 
 -- | Memoize a function with three arguments.
-memoize3 :: ∀ k1 k2 k3 v. 
+memoize3 :: ∀ k1 k2 k3 v.
             ( Bounded k1, Enum k1
             , Bounded k2, Enum k2
             , Bounded k3, Enum k3

@@ -2,9 +2,9 @@ cabal-version: 1.12
 
 name:           bitwise-enum
 version:        0.1.0.0
-synopsis:       Bitwise operations on enumerations
+synopsis:       Bitwise operations on bounded enumerations
 description:
-    Bitwise operations on enumerations.
+    Bitwise operations on bounded enumerations.
     .
     ["Data.Enum.Set"] Constant-time sets using bit flags.
     .
