@@ -1,2 +1,2 @@
-# bounded-enum
+# bitwise-enum
 Bitwise operations on enumerations.

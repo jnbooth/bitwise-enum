@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
-name:           bounded-enum
+name:           bitwise-enum
 version:        0.1.0.0
 synopsis:       Bitwise operations on enumerations
 description:
@@ -9,8 +9,8 @@ description:
     ["Data.Enum.Set"] Constant-time sets using bit flags.
     .
     ["Data.Enum.Memo"] Constant-time lookup memoization for functions on enumerated types.
-homepage:       https://github.com/jnbooth/bounded-enum#readme
-bug-reports:    https://github.com/jnbooth/bounded-enum/issues
+homepage:       https://github.com/jnbooth/bitwise-enum#readme
+bug-reports:    https://github.com/jnbooth/bitwise-enum/issues
 author:         Joshua Booth <joshua.n.booth@gmail.com>
 maintainer:     Joshua Booth <joshua.n.booth@gmail.com>
 license:        BSD3
@@ -19,7 +19,7 @@ build-type:     Simple
 
 source-repository head
   type: git
-  location: https://github.com/jnbooth/bounded-enum
+  location: https://github.com/jnbooth/bitwise-enum
 
 library
   exposed-modules:
@@ -52,7 +52,7 @@ test-suite enumset-test-suite
       QuickCheck >=2.13.2
     , aeson >=0.11 && <1.4.7
     , base
-    , bounded-enum
+    , bitwise-enum
     , deepseq >=1.1 && <1.4.5
     , mono-traversable >=1.0.12 && <1.0.16
     , test-framework >=0.8.2.0
@@ -71,7 +71,7 @@ benchmark enumset-benchmarks
   build-depends:
       aeson >=0.11 && <1.4.7
     , base
-    , bounded-enum
+    , bitwise-enum
     , deepseq >=1.1 && <1.4.5
     , gauge >=0.2.5
     , mono-traversable >=1.0.12 && <1.0.16
