@@ -7,22 +7,56 @@
 -- [containers](https://hackage.haskell.org/package/containers-0.6.0.1/docs/src/Data.IntSet.Internal.html)
 -- and
 -- [EdisonCore](https://hackage.haskell.org/package/EdisonCore-1.3.2.1/docs/src/Data-Edison-Coll-EnumSet.html).
--- In many cases, @EnumSet@s may be optimised away entirely by constant folding.
--- For example, GHC can replace 'GHC.Exts.fromList` of constant values with the
--- resulting word representation during compilation.
+-- In many cases, @EnumSet@s may be optimised away entirely by constant folding
+-- at compile-time. For example, in the following code:
 --
--- For type @EnumSet W E@, @W@ should be a 'Word'-like type that implements
--- 'Bits' and 'Num', and @E@ should be a type that implements 'Eq' and 'Enum'
--- equivalently and is a bijection to 'Int'.
+-- @
+-- import Data.Enum.Set as E
 --
+-- data Foo = A | B | C | D | E | F | G | H deriving (Bounded, Enum, Eq, Ord)
+--
+-- instance E.AsEnumSet Foo
+--
+-- addFoos :: E.EnumSet Foo -> E.EnumSet Foo
+-- addFoos = E.delete A . E.insert B
+--
+-- bar :: E.EnumSet Foo
+-- bar = addFoos $ E.fromFoldable [A, C, E]
+--
+-- barHasA :: Bool
+-- barHasA = E.member A bar
+-- @
+--
+-- With @-O@ or @-O2@, @bar@ will compile to @GHC.Types.W\# 22\#\#@ and
+-- @barHasA@ will compile to @GHC.Types.False@.
+--
+-- By default, 'Word's are used as the representation. Other representations may
+-- be chosen in the class instance:
+--
+-- @
+-- {-\# LANGUAGE TypeFamilies \#-}
+--
+-- import Data.Enum.Set as E
+-- import Data.Word (Word64)
+--
+-- data Foo = A | B | C | D | E | F | G | H deriving (Bounded, Enum, Eq, Ord, Show)
+--
+-- instance E.AsEnumSet Foo where
+--     type EnumSetRep Foo = Word64
+--
+-- @
+--
+-- For type @EnumSet E@, @EnumSetRep E@ should be a @Word@-like type that
+-- implements 'Bits' and 'Num', and @E@ should be a type that implements 'Eq'
+-- and 'Enum' equivalently and is a bijection to 'Int'.
 -- @EnumSet E@ can only store a value of @E@ if the result of applying
 -- 'fromEnum' to the value is positive and less than the number of bits in
 -- @EnumSetRep E@. For this reason, it is preferable for @E@ to be a type that
--- derives 'Eq' and 'Enum', and for @EnumSetRep E@ to have more bits than the
+-- derives @Eq@ and @Enum@, and for @EnumSetRep E@ to have more bits than the
 -- number of constructors of @E@.
 --
 -- If the highest @fromEnum@ value of @E@ is 29, @EnumSetRep E@ should be
--- 'Data.Word.Word', because it always has at least 30 bits. This is the
+-- 'Word', because it always has at least 30 bits. This is the
 -- default implementation.
 -- Otherwise, options include 'Data.Word.Word32', 'Data.Word.Word64', and the
 -- [wide-word](https://hackage.haskell.org/package/wide-word-0.1.0.8/) package's
@@ -30,9 +64,9 @@
 -- Foreign types may also be used.
 --
 -- Note: complexity calculations assume that @EnumSetRep E@ implements 'Bits'
--- with constant-time functions, as is the case with 'Data.Word.Word' etc. If
--- this is not the case, the complexity of those operations should be added to
--- the complexity of 'EnumSet' functions.
+-- with constant-time functions, as is the case with @Word@ etc. Otherwise, the
+-- complexity of those operations should be added to the complexity of @EnumSet@
+-- functions.
 module Data.Enum.Set
   ( AsEnumSet(..)
   -- * Set type
@@ -182,7 +216,7 @@ union = E.union
 {-# INLINE union #-}
 
 -- | /O(1)/. Difference between two sets.
-difference :: ∀ a. AsEnumSet a =>  EnumSet a -> EnumSet a -> EnumSet a
+difference :: ∀ a. AsEnumSet a => EnumSet a -> EnumSet a -> EnumSet a
 difference = E.difference
 {-# INLINE difference #-}
 

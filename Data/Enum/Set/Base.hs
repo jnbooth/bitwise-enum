@@ -15,14 +15,32 @@
 -- [containers](https://hackage.haskell.org/package/containers-0.6.0.1/docs/src/Data.IntSet.Internal.html)
 -- and
 -- [EdisonCore](https://hackage.haskell.org/package/EdisonCore-1.3.2.1/docs/src/Data-Edison-Coll-EnumSet.html).
--- In many cases, @EnumSet@s may be optimised away entirely by constant folding.
--- For example, GHC can replace 'GHC.Exts.fromList` of constant values with the
--- resulting word representation during compilation.
+-- In many cases, @EnumSet@s may be optimised away entirely by constant folding
+-- at compile-time. For example, in the following code:
+--
+-- @
+--
+-- import Data.Enum.Set.Base as E
+--
+-- data Foo = A | B | C | D | E | F | G | H deriving (Bounded, Enum, Eq, Ord, Show)
+--
+-- addFoos :: E.EnumSet Word Foo -> E.EnumSet Word Foo
+-- addFoos = E.delete A . E.insert B
+--
+-- bar :: E.EnumSet Word Foo
+-- bar = addFoos $ E.fromFoldable [A, C, E]
+--
+-- barHasB :: Bool
+-- barHasB = E.member A bar
+--
+-- @
+--
+-- With @-O@ or @-O2@, @bar@ will compile to @GHC.Types.W\# 22\#\#@ and
+-- @barHasA@ will compile to @GHC.Types.False@.
 --
 -- For type @EnumSet W E@, @W@ should be a 'Word'-like type that implements
 -- 'Bits' and 'Num', and @E@ should be a type that implements 'Eq' and 'Enum'
 -- equivalently and is a bijection to 'Int'.
---
 -- @EnumSet W E@ can only store a value of @E@ if the result of applying
 -- 'fromEnum' to the value is positive and less than the number of bits in @W@.
 -- For this reason, it is preferable for @E@ to be a type that derives 'Eq' and
