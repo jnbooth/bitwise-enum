@@ -129,7 +129,6 @@ module Data.Enum.Set
 import Prelude hiding (all, any, filter, foldl, foldl1, foldMap, foldr, foldr1, map, maximum, minimum, null, traverse)
 
 import Data.Bits
-import Data.Monoid (Monoid(..))
 
 import qualified Data.Enum.Set.Base as E
 

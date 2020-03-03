@@ -133,7 +133,6 @@ import Control.Monad
 import Data.Aeson (ToJSON(..))
 import Data.Bits
 import Data.Data (Data)
-import Data.Monoid (Monoid(..))
 import Data.Vector.Unboxed (Vector, MVector, Unbox)
 import Foreign.Storable (Storable)
 import GHC.Exts (IsList(Item), build)
