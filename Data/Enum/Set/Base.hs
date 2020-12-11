@@ -157,7 +157,7 @@ newtype EnumSet word a = EnumSet word
     deriving (Eq, Ord, Data, Storable, NFData, P.Prim, Unbox)
 
 newtype instance MVector s (EnumSet word a) = MV_EnumSet (P.MVector s (EnumSet word a))
-newtype instance Vector    (EnumSet word a) = V_EnumSet (P.Vector (EnumSet word a))
+newtype instance Vector    (EnumSet word a) = V_EnumSet  (P.Vector    (EnumSet word a))
 
 instance P.Prim word => M.MVector MVector (EnumSet word a) where
     basicLength (MV_EnumSet v) = M.basicLength v
@@ -566,13 +566,13 @@ any p (EnumSet w) = let lb = lsb w in go lb (w `unsafeShiftR` lb)
 -- | /O(1)/. The minimal element of a non-empty set.
 minimum :: ∀ w a. (FiniteBits w, Num w, Enum a)
         => EnumSet w a -> a
-minimum (EnumSet 0) = error "empty EnumSet"
+minimum (EnumSet 0) = errorEmpty
 minimum (EnumSet w) = toEnum $ lsb w
 
 -- | /O(1)/. The maximal element of a non-empty set.
 maximum :: ∀ w a. (FiniteBits w, Num w, Enum a)
         => EnumSet w a -> a
-maximum (EnumSet 0) = error "empty EnumSet"
+maximum (EnumSet 0) = errorEmpty
 maximum (EnumSet w) = toEnum $ msb w
 
 -- | /O(1)/. Delete the minimal element.
@@ -683,8 +683,11 @@ foldrBits' f z w = let lb = lsb w in go lb (w `unsafeShiftR` lb)
 
 fold1Aux :: ∀ w a. (Bits w, Num w, Enum a)
          => (w -> Int) -> (a -> w -> a) -> EnumSet w a -> a
-fold1Aux _      _ (EnumSet 0) = error "empty EnumSet"
+fold1Aux _      _ (EnumSet 0) = errorEmpty
 fold1Aux getBit f (EnumSet w) = f (toEnum gotBit) (clearBit w gotBit)
   where
     gotBit = getBit w
 {-# INLINE fold1Aux #-}
+
+errorEmpty :: a
+errorEmpty = error "Data.Enum.Set: empty EnumSet"
