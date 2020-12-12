@@ -623,30 +623,21 @@ fromRaw = EnumSet
   Utility functions
 --------------------------------------------------------------------}
 
+-- | Least significant bit. 
 lsb :: ∀ w. (FiniteBits w, Num w) => w -> Int
-lsb n0 = go 0 n0 $ finiteBitSize n0 `quot` 2
-  where
-    go b n 1 = case n .&. 1 of
-        0 -> 1 + b
-        _ -> b
-    go b n i = case n .&. (bit i - 1) of
-        0 -> go (i + b) (n `unsafeShiftR` i) (i `quot` 2)
-        _ -> go b       n                    (i `quot` 2)
+lsb = countTrailingZeros
 {-# INLINE lsb #-}
 
+-- | Most significant bit.
 msb :: ∀ w. (FiniteBits w, Num w) => w -> Int
-msb n0 = go 0 n0 $ finiteBitSize n0 `quot` 2
-  where
-    go b n 1 = case n .&. 2 of
-        0 -> b
-        _ -> 1 + b
-    go b n i = case n .&. (bit (i * 2) - bit i) of
-        0 -> go b       n                    (i `quot` 2)
-        _ -> go (i + b) (n `unsafeShiftR` i) (i `quot` 2)
+msb w = finiteBitSize w - 1 - countLeadingZeros w
 {-# INLINE msb #-}
 
+-- These folding algorithms are similar to those of [IntSet](https://hackage.haskell.org/package/containers-0.6.0.1/docs/src/Data.IntSet.Internal.html), but generalized to work with any FiniteBits type.
+
+-- | Left fold over bits.
 foldlBits :: ∀ w a. (FiniteBits w, Num w) => (a -> Int -> a) -> a -> w -> a
-foldlBits  f z w = let lb = lsb w in go lb z (w `unsafeShiftR` lb)
+foldlBits f z w = let lb = lsb w in go lb z (w `unsafeShiftR` lb)
   where
     go !_ acc 0 = acc
     go bi acc n
@@ -654,6 +645,7 @@ foldlBits  f z w = let lb = lsb w in go lb z (w `unsafeShiftR` lb)
       | otherwise     = go (bi + 1)    acc     (n `unsafeShiftR` 1)
 {-# INLINE foldlBits #-}
 
+-- | Left fold over bits. The accumulator is evaluated to WHNF at every step.
 foldlBits' :: ∀ w a. (FiniteBits w, Num w) => (a -> Int -> a) -> a -> w -> a
 foldlBits' f z w = let lb = lsb w in go lb z (w `unsafeShiftR` lb)
   where
@@ -663,6 +655,7 @@ foldlBits' f z w = let lb = lsb w in go lb z (w `unsafeShiftR` lb)
       | otherwise     = go (bi + 1)    acc     (n `unsafeShiftR` 1)
 {-# INLINE foldlBits' #-}
 
+-- | Right fold over bits.
 foldrBits :: ∀ w a. (FiniteBits w, Num w) => (Int -> a -> a) -> a -> w -> a
 foldrBits f z w = let lb = lsb w in go lb (w `unsafeShiftR` lb)
   where
@@ -672,6 +665,7 @@ foldrBits f z w = let lb = lsb w in go lb (w `unsafeShiftR` lb)
       | otherwise     =       go (bi + 1) (n `unsafeShiftR` 1)
 {-# INLINE foldrBits #-}
 
+-- | Right fold over bits. The accumulator is evaluated to WHNF at every step.
 foldrBits' :: ∀ w a. (FiniteBits w, Num w) => (Int -> a -> a) -> a -> w -> a
 foldrBits' f z w = let lb = lsb w in go lb (w `unsafeShiftR` lb)
   where
