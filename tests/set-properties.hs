@@ -1,9 +1,13 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE BlockArguments             #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MonadComprehensions        #-}
 
 import Prelude
 
-import Data.List ((\\), foldl', nub, sort)
+import Control.Applicative ((<|>))
+import Data.Foldable (foldl', foldr')
+import Data.List ((\\), nub, sort)
 import Data.Bits
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
@@ -42,6 +46,10 @@ main = defaultMain
     , testProperty "foldl'" prop_foldl'
     , testProperty "foldr" prop_foldr
     , testProperty "foldr'" prop_foldr'
+    , testProperty "foldl_origin" prop_foldl_origin
+    , testProperty "foldl'_origin" prop_foldl'_origin
+    , testProperty "foldr_origin" prop_foldr_origin
+    , testProperty "foldr'_origin" prop_foldr'_origin
       -- Special folds
     , testProperty "foldMap" prop_foldMap
     , testProperty "traverse" prop_traverse
@@ -192,6 +200,18 @@ prop_foldr s = E.foldr (:) [] s == E.toList s
 prop_foldr' :: ES -> Bool
 prop_foldr' s = E.foldr' (:) [] s == E.toList s
 
+prop_foldl_origin :: Fun Key Bool -> ES -> Bool
+prop_foldl_origin = originHelper id E.foldl foldl
+
+prop_foldl'_origin :: Fun Key Bool -> ES -> Bool
+prop_foldl'_origin = originHelper id E.foldl' foldl'
+
+prop_foldr_origin :: Fun Key Bool -> ES -> Bool
+prop_foldr_origin = originHelper flip E.foldr foldr
+
+prop_foldr'_origin :: Fun Key Bool -> ES -> Bool
+prop_foldr'_origin = originHelper flip E.foldr' foldr'
+
 -- * Special folds
 
 prop_all :: Fun Key Bool -> ES -> Property
@@ -234,3 +254,14 @@ prop_toList xs = sort (nub xs) == E.toList (E.fromFoldable xs :: ES)
 
 prop_readShow :: ES -> Bool
 prop_readShow s = s == read (show s)
+
+-- * Utility functions
+
+originHelper :: ((Maybe Key -> Key -> Maybe Key) -> f)
+             -> (f -> Maybe Key -> ES -> Maybe Key)
+             -> (f -> Maybe Key -> [Key] -> Maybe Key)
+             -> Fun Key Bool -> ES -> Bool
+originHelper reorder fSet fList p s = 
+    fSet f Nothing s == fList f Nothing (E.toList s)
+  where
+    f = reorder \acc x -> acc <|> [x | apply p x]
