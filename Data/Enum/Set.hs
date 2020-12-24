@@ -48,7 +48,7 @@
 --
 -- For type @EnumSet E@, @EnumSetRep E@ should be a @Word@-like type that
 -- implements 'Bits' and 'Num', and @E@ should be a type that implements 'Eq'
--- and 'Enum' equivalently and is a bijection to 'Int'.
+-- and 'Enum' equivalently and is a bijection to 'Int' over its range.
 -- @EnumSet E@ can only store a value of @E@ if the result of applying
 -- 'fromEnum' to the value is positive and less than the number of bits in
 -- @EnumSetRep E@. For this reason, it is preferable for @E@ to be a type that
@@ -200,7 +200,7 @@ size = E.size
 {-# INLINE size #-}
 
 -- | /O(1)/. Is this a subset?
--- @(s1 `isSubsetOf` s2)@ tells whether @s1@ is a subset of @s2@.
+-- @(s1 \`isSubsetOf\` s2)@ tells whether @s1@ is a subset of @s2@.
 isSubsetOf :: ∀ a. AsEnumSet a => EnumSet a -> EnumSet a -> Bool
 isSubsetOf = E.isSubsetOf
 {-# INLINE isSubsetOf #-}

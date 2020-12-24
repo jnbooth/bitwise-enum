@@ -30,9 +30,9 @@ main = G.defaultMain . concat . transpose =<< sequence
 
 benchWord :: ∀ w. (FiniteBits w, NFData w, Num w, Typeable w) => IO [Benchmark]
 benchWord = do
-    let s = E.fromFoldable elems :: E.EnumSet w Int
+    let s      = E.fromFoldable elems      :: E.EnumSet w Int
         s_even = E.fromFoldable elems_even :: E.EnumSet w Int
-        s_odd = E.fromFoldable elems_odd :: E.EnumSet w Int
+        s_odd  = E.fromFoldable elems_odd  :: E.EnumSet w Int
     evaluate $ rnf [s, s_even, s_odd]
     return
       [ bench "singleton" (E.singleton :: Int -> E.EnumSet w Int) 2

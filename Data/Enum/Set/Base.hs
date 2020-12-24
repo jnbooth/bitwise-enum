@@ -40,7 +40,7 @@
 --
 -- For type @EnumSet W E@, @W@ should be a 'Word'-like type that implements
 -- 'Bits' and 'Num', and @E@ should be a type that implements 'Eq' and 'Enum'
--- equivalently and is a bijection to 'Int'.
+-- equivalently and is a bijection to 'Int' over its range.
 -- @EnumSet W E@ can only store a value of @E@ if the result of applying
 -- 'fromEnum' to the value is positive and less than the number of bits in @W@.
 -- For this reason, it is preferable for @E@ to be a type that derives 'Eq' and
@@ -380,7 +380,7 @@ size :: ∀ w a. (Bits w, Num w)
 size (EnumSet !w) = popCount w
 
 -- | /O(1)/. Is this a subset?
--- @(s1 `isSubsetOf` s2)@ tells whether @s1@ is a subset of @s2@.
+-- @(s1 \`isSubsetOf\` s2)@ tells whether @s1@ is a subset of @s2@.
 isSubsetOf :: ∀ w a. (Bits w)
            => EnumSet w a -> EnumSet w a -> Bool
 isSubsetOf (EnumSet x) (EnumSet y) = x .|. y == y
@@ -633,7 +633,8 @@ msb :: ∀ w. (FiniteBits w, Num w) => w -> Int
 msb w = finiteBitSize w - 1 - countLeadingZeros w
 {-# INLINE msb #-}
 
--- These folding algorithms are similar to those of [IntSet](https://hackage.haskell.org/package/containers-0.6.0.1/docs/src/Data.IntSet.Internal.html), but generalized to work with any FiniteBits type.
+-- These folding algorithms are similar to those of [IntSet](https://hackage.haskell.org/package/containers-0.6.0.1/docs/src/Data.IntSet.Internal.html),
+-- but generalized to work with any FiniteBits type.
 
 -- | Left fold over bits.
 foldlBits :: ∀ w a. (FiniteBits w, Num w) => (a -> Int -> a) -> a -> w -> a
