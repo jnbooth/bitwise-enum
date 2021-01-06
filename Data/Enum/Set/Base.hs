@@ -2,7 +2,6 @@
 {-# LANGUAGE BlockArguments             #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
-{-# LANGUAGE ExplicitForAll             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE PolyKinds                  #-}
@@ -129,7 +128,6 @@ import Prelude hiding (all, any, filter, foldl, foldl1, foldMap, foldr, foldr1, 
 
 import Control.Applicative (liftA2)
 import Control.DeepSeq (NFData)
-import Control.Monad
 import Data.Aeson (ToJSON(..))
 import Data.Bits
 import Data.Data (Data)
@@ -166,11 +164,11 @@ instance P.Prim word => M.MVector MVector (EnumSet word a) where
     {-# INLINE basicUnsafeSlice #-}
     basicOverlaps (MV_EnumSet v1) (MV_EnumSet v2) = M.basicOverlaps v1 v2
     {-# INLINE basicOverlaps #-}
-    basicUnsafeNew n = MV_EnumSet `liftM` M.basicUnsafeNew n
+    basicUnsafeNew n = MV_EnumSet <$> M.basicUnsafeNew n
     {-# INLINE basicUnsafeNew #-}
     basicInitialize (MV_EnumSet v) = M.basicInitialize v
     {-# INLINE basicInitialize #-}
-    basicUnsafeReplicate n x = MV_EnumSet `liftM` M.basicUnsafeReplicate n x
+    basicUnsafeReplicate n x = MV_EnumSet <$> M.basicUnsafeReplicate n x
     {-# INLINE basicUnsafeReplicate #-}
     basicUnsafeRead (MV_EnumSet v) i = M.basicUnsafeRead v i
     {-# INLINE basicUnsafeRead #-}
@@ -184,14 +182,14 @@ instance P.Prim word => M.MVector MVector (EnumSet word a) where
     {-# INLINE basicUnsafeCopy #-}
     basicUnsafeMove (MV_EnumSet v1) (MV_EnumSet v2) = M.basicUnsafeMove v1 v2
     {-# INLINE basicUnsafeMove #-}
-    basicUnsafeGrow (MV_EnumSet v) n = MV_EnumSet `liftM` M.basicUnsafeGrow v n
+    basicUnsafeGrow (MV_EnumSet v) n = MV_EnumSet <$> M.basicUnsafeGrow v n
     {-# INLINE basicUnsafeGrow #-}
 
 
 instance P.Prim word => G.Vector Vector (EnumSet word a) where
-    basicUnsafeFreeze (MV_EnumSet v) = V_EnumSet `liftM` G.basicUnsafeFreeze v
+    basicUnsafeFreeze (MV_EnumSet v) = V_EnumSet <$> G.basicUnsafeFreeze v
     {-# INLINE basicUnsafeFreeze #-}
-    basicUnsafeThaw (V_EnumSet v) = MV_EnumSet `liftM` G.basicUnsafeThaw v
+    basicUnsafeThaw (V_EnumSet v) = MV_EnumSet <$> G.basicUnsafeThaw v
     {-# INLINE basicUnsafeThaw #-}
     basicLength (V_EnumSet v) = G.basicLength v
     {-# INLINE basicLength #-}

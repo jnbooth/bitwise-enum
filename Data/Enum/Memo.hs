@@ -1,4 +1,3 @@
-{-# LANGUAGE ExplicitForAll      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UnicodeSyntax       #-}
 {-# LANGUAGE TypeApplications    #-}
