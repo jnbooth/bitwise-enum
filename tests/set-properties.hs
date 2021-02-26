@@ -62,6 +62,7 @@ main = defaultMain
     , testProperty "maxView" prop_maxView
       -- Conversion
     , testProperty "toList" prop_toList
+    , testProperty "fromRaw/toRaw" prop_raw
     , testProperty "Read/Show" prop_readShow
     ]
 
@@ -252,6 +253,9 @@ prop_maxView s = case E.maxView s of
 prop_toList :: [Key] -> Bool
 prop_toList xs = sort (nub xs) == E.toList (E.fromFoldable xs :: ES)
 
+prop_raw :: ES -> Bool
+prop_raw s = s == E.fromRaw (E.toRaw s)
+
 prop_readShow :: ES -> Bool
 prop_readShow s = s == read (show s)
 
@@ -261,7 +265,7 @@ originHelper :: ((Maybe Key -> Key -> Maybe Key) -> f)
              -> (f -> Maybe Key -> ES -> Maybe Key)
              -> (f -> Maybe Key -> [Key] -> Maybe Key)
              -> Fun Key Bool -> ES -> Bool
-originHelper reorder fSet fList p s = 
+originHelper reorder fSet fList p s =
     fSet f Nothing s == fList f Nothing (E.toList s)
   where
     f = reorder \acc x -> acc <|> [x | apply p x]

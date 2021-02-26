@@ -119,6 +119,7 @@ module Data.Enum.Set.Base
   -- * Conversion
   , toList
   , fromRaw
+  , toRaw
   ) where
 
 import qualified GHC.Exts
@@ -617,11 +618,17 @@ fromRaw :: ∀ w a. w -> EnumSet w a
 fromRaw = EnumSet
 {-# INLINE fromRaw #-}
 
+-- | /O(1)/. Convert an @EnumSet@ into its representation.
+-- Intended for use with foreign types.
+toRaw :: ∀ w a. EnumSet w a -> w
+toRaw (EnumSet x) = x
+{-# INLINE toRaw #-}
+
 {--------------------------------------------------------------------
   Utility functions
 --------------------------------------------------------------------}
 
--- | Least significant bit. 
+-- | Least significant bit.
 lsb :: ∀ w. (FiniteBits w, Num w) => w -> Int
 lsb = countTrailingZeros
 {-# INLINE lsb #-}

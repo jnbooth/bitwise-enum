@@ -124,6 +124,7 @@ module Data.Enum.Set
   -- * Conversion
   , toList
   , fromRaw
+  , toRaw
   ) where
 
 import Prelude hiding (all, any, filter, foldl, foldl1, foldMap, foldr, foldr1, map, maximum, minimum, null, traverse)
@@ -381,3 +382,9 @@ toList = E.toList
 fromRaw :: ∀ a. AsEnumSet a => EnumSetRep a -> EnumSet a
 fromRaw = E.fromRaw
 {-# INLINE fromRaw #-}
+
+-- | /O(1)/. Convert an @EnumSet@ into its representation.
+-- Intended for use with foreign types.
+toRaw :: ∀ a. AsEnumSet a => EnumSet a -> EnumSetRep a
+toRaw = E.toRaw
+{-# INLINE toRaw #-}
