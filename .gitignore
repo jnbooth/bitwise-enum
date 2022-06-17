@@ -1,5 +1,4 @@
 dist-*
 .stack-work/
 .ghc.environment.*
-*.yaml
 *.lock

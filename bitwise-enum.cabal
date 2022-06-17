@@ -1,10 +1,8 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 5fdbdf5677b7ae0a0c640e45ae5ba0dc5db8950240db416cd566fb5f90d288d2
 
 name:           bitwise-enum
 version:        1.0.1.0
@@ -38,7 +36,7 @@ library
       ./
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -ferror-spans -funbox-small-strict-fields -O2
   build-depends:
-      aeson >=0.11 && <2.1
+      aeson >=0.11 && <2.2
     , array >=0.5.1 && <0.6
     , base >=4.5 && <5
     , deepseq >=1.1 && <1.5
@@ -56,7 +54,7 @@ test-suite enumset-test-suite
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -ferror-spans -funbox-small-strict-fields
   build-depends:
       QuickCheck >=2.13.2
-    , aeson >=0.11 && <2.1
+    , aeson >=0.11 && <2.2
     , array >=0.5.1 && <0.6
     , base
     , bitwise-enum
@@ -76,7 +74,7 @@ benchmark enumset-benchmarks
       benchmarks
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -ferror-spans -funbox-small-strict-fields -rtsopts -threaded -with-rtsopts=-N -O2
   build-depends:
-      aeson >=0.11 && <2.1
+      aeson >=0.11 && <2.2
     , array >=0.5.1 && <0.6
     , base
     , bitwise-enum
