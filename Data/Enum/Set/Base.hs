@@ -125,7 +125,8 @@ module Data.Enum.Set.Base
 import qualified GHC.Exts
 import qualified Data.Foldable as F
 
-import Prelude hiding (all, any, filter, foldl, foldl1, foldMap, foldr, foldr1, map, maximum, minimum, null, traverse)
+import Prelude hiding (Foldable(..), all, any, filter, map, traverse)
+import Data.Foldable (Foldable)
 
 import Control.Applicative (liftA2)
 import Control.DeepSeq (NFData)
