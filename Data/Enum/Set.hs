@@ -127,7 +127,8 @@ module Data.Enum.Set
   , toRaw
   ) where
 
-import Prelude hiding (all, any, filter, foldl, foldl1, foldMap, foldr, foldr1, map, maximum, minimum, null, traverse)
+import Prelude hiding (Foldable(..), all, any, filter, map, traverse)
+import Data.Foldable (Foldable)
 
 import Data.Bits
 
