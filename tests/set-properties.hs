@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE BlockArguments             #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MonadComprehensions        #-}
 
@@ -268,4 +267,4 @@ originHelper :: ((Maybe Key -> Key -> Maybe Key) -> f)
 originHelper reorder fSet fList p s =
     fSet f Nothing s == fList f Nothing (E.toList s)
   where
-    f = reorder \acc x -> acc <|> [x | apply p x]
+    f = reorder $ \acc x -> acc <|> [x | apply p x]
