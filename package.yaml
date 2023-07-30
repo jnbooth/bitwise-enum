@@ -1,5 +1,5 @@
 name:         bitwise-enum
-version:      1.0.1.0
+version:      1.0.1.1
 github:       "jnbooth/bitwise-enum"
 homepage:     https://github.com/jnbooth/bitwise-enum
 bug-reports:  https://github.com/jnbooth/bitwise-enum/issues
@@ -13,8 +13,8 @@ description:  |
     Bitwise operations on bounded enumerations.
     .
     ["Data.Enum.Set"] Constant-time sets using bit flags.
-  .
-  ["Data.Enum.Memo"] Constant-time lookup memoization for functions on enumerated types.
+    .
+    ["Data.Enum.Memo"] Constant-time lookup memoization for functions on enumerated types.
 
 dependencies:
   - aeson >=0.11 && <2.3
