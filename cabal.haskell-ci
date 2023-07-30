@@ -1,0 +1,4 @@
+branches: master
+email-notifications: False
+github-action-name: CI
+hlint: True
