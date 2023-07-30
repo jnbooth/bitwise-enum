@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE BlockArguments             #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -307,7 +308,7 @@ instance (FiniteBits w, Num w, Enum x, Show x) => Show (EnumSet w x) where
     {-# INLINABLE showsPrec #-}
 
 instance (Bits w, Num w, Enum x, Read x) => Read (EnumSet w x) where
-    readPrec = parens $ prec 10 $ do
+    readPrec = parens $ prec 10 do
         Ident "fromList" <- lexP
         fromFoldable <$> (readPrec :: ReadPrec [x])
     {-# INLINABLE readPrec #-}
@@ -609,7 +610,7 @@ maxView (EnumSet w) = let i = msb w in Just (toEnum i, EnumSet $ clearBit w i)
 -- | /O(n)/. Convert the set to a list of values.
 toList :: ∀ w a. (FiniteBits w, Num w, Enum a)
        => EnumSet w a -> [a]
-toList (EnumSet w) = build $ \c n -> foldrBits (c . toEnum) n w
+toList (EnumSet w) = build \c n -> foldrBits (c . toEnum) n w
 {-# INLINE toList #-}
 
 -- | /O(1)/. Convert a representation into an @EnumSet@.

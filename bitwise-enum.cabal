@@ -21,9 +21,7 @@ license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 tested-with:
-    GHC ==8.2.2
- || ==8.4.4
- || ==8.6.5
+    GHC ==8.6.1
  || ==8.8.4
  || ==8.10.7
  || ==9.0.2
@@ -49,7 +47,7 @@ library
   build-depends:
       aeson >=0.11 && <2.3
     , array >=0.5.1 && <0.6
-    , base >=4.9 && <5
+    , base >=4.12 && <5
     , deepseq >=1.1 && <1.6
     , mono-traversable >=1.0.12 && <1.1
     , vector >=0.11 && <0.14
