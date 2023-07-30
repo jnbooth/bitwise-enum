@@ -13,25 +13,25 @@ description:  |
     Bitwise operations on bounded enumerations.
     .
     ["Data.Enum.Set"] Constant-time sets using bit flags.
-    .
-    ["Data.Enum.Memo"] Constant-time lookup memoization for functions on enumerated types.
+  .
+  ["Data.Enum.Memo"] Constant-time lookup memoization for functions on enumerated types.
 
 dependencies:
-- aeson >=0.11 && <2.2
-- array >=0.5.1 && <0.6
-- base >=4.5 && <5
-- deepseq >=1.1 && <1.5
-- mono-traversable >=1.0.12 && <1.1
-- vector >=0.11 && <0.14
+  - aeson >=0.11 && <2.3
+  - array >=0.5.1 && <0.6
+  - base >=4.5 && <5
+  - deepseq >=1.1 && <1.6
+  - mono-traversable >=1.0.12 && <1.1
+  - vector >=0.11 && <0.14
 
 ghc-options:
-- -Wall
-- -Wcompat
-- -Widentities
-- -Wincomplete-uni-patterns
-- -Wincomplete-record-updates
-- -ferror-spans
-- -funbox-small-strict-fields
+  - -Wall
+  - -Wcompat
+  - -Widentities
+  - -Wincomplete-uni-patterns
+  - -Wincomplete-record-updates
+  - -ferror-spans
+  - -funbox-small-strict-fields
 
 library:
   source-dirs: ./
@@ -62,4 +62,3 @@ tests:
       - QuickCheck >=2.13.2
       - test-framework >=0.8.2.0
       - test-framework-quickcheck2 >=0.3.0.5
-
