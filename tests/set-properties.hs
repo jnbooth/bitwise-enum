@@ -6,7 +6,7 @@
 import Prelude
 
 import Control.Applicative ((<|>))
-import Data.Foldable (foldl', foldr')
+import Data.Foldable (Foldable(..))
 import Data.List ((\\), nub, sort)
 import Data.Bits
 import Test.Framework
