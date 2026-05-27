@@ -125,10 +125,10 @@ module Data.Enum.Set.Base
 import qualified GHC.Exts
 import qualified Data.Foldable as F
 
-import Prelude hiding (Foldable(..), all, any, filter, map, traverse)
+import Prelude hiding (Applicative(..), Foldable(..), all, any, filter, map, traverse)
 import Data.Foldable (Foldable)
 
-import Control.Applicative (liftA2)
+import Control.Applicative (Applicative(..))
 import Control.DeepSeq (NFData)
 import Data.Aeson (ToJSON(..))
 import Data.Bits
