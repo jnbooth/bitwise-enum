@@ -51,6 +51,7 @@ library
     , array >=0.5.1 && <0.6
     , base >=4.12 && <5
     , deepseq >=1.1 && <1.7
+    , hashable >=1.4 && <1.6
     , mono-traversable >=1.0.12 && <1.1
     , vector >=0.11 && <0.14
   default-language: Haskell2010
@@ -70,6 +71,7 @@ test-suite enumset-test-suite
     , base
     , bitwise-enum
     , deepseq >=1.1 && <1.7
+    , hashable >=1.4 && <1.6
     , mono-traversable >=1.0.12 && <1.1
     , test-framework >=0.8.2.0
     , test-framework-quickcheck2 >=0.3.0.5
@@ -91,6 +93,7 @@ benchmark enumset-benchmarks
     , bitwise-enum
     , deepseq >=1.1 && <1.7
     , gauge >=0.2.5
+    , hashable >=1.4 && <1.6
     , mono-traversable >=1.0.12 && <1.1
     , vector >=0.11 && <0.14
     , wide-word >=0.1.0.9

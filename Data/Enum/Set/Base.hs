@@ -133,6 +133,7 @@ import Control.DeepSeq (NFData)
 import Data.Aeson (ToJSON(..))
 import Data.Bits
 import Data.Data (Data)
+import Data.Hashable (Hashable)
 import Data.Vector.Unboxed (Vector, MVector, Unbox)
 import Foreign.Storable (Storable)
 import GHC.Exts (IsList(Item), build)
@@ -154,7 +155,7 @@ import           Data.MonoTraversable (Element, GrowingAppend, MonoFoldable, Mon
 -- | A set of values @a@ with representation @word@,
 -- implemented as bitwise operations.
 newtype EnumSet word a = EnumSet word
-    deriving (Eq, Ord, Data, Storable, NFData, P.Prim, Unbox)
+    deriving (Eq, Ord, Data, Hashable, Storable, NFData, P.Prim, Unbox)
 
 newtype instance MVector s (EnumSet word a) = MV_EnumSet (P.MVector s (EnumSet word a))
 newtype instance Vector    (EnumSet word a) = V_EnumSet  (P.Vector    (EnumSet word a))
